@@ -253,21 +253,15 @@ impl DataFrame {
         let row_ptrs: Vec<*const c_char> = row_cs.iter().map(|s| s.as_ptr()).collect();
         let col_cs: Vec<CString> = col_indices.iter().map(|&s| CString::new(s).unwrap()).collect();
         let col_ptrs: Vec<*const c_char> = col_cs.iter().map(|s| s.as_ptr()).collect();
-        let mut row_args: *mut ffi::AMPL_ARGS = ptr::null_mut();
-        let mut col_args: *mut ffi::AMPL_ARGS = ptr::null_mut();
         unsafe {
-            ffi::AMPL_ArgsCreateString(&mut row_args, row_ptrs.as_ptr());
-            ffi::AMPL_ArgsCreateString(&mut col_args, col_ptrs.as_ptr());
-            ffi::AMPL_DataFrameSetMatrix(
+            ffi::AMPL_DataFrameSetMatrixStringString(
                 self.raw,
                 values.as_ptr(),
                 row_indices.len(),
-                row_args,
+                row_ptrs.as_ptr(),
                 col_indices.len(),
-                col_args,
+                col_ptrs.as_ptr(),
             );
-            ffi::AMPL_ArgsDestroy(&mut row_args);
-            ffi::AMPL_ArgsDestroy(&mut col_args);
         }
     }
 
