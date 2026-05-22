@@ -1,3 +1,4 @@
+use crate::error::check_ampl_error;
 use crate::ffi;
 use crate::ampl::Ampl;
 use crate::suffix::{Numericsuffix, Stringsuffix};
@@ -24,7 +25,8 @@ impl Constraintinstance {
         let name = CString::new(&*self.name).unwrap();
         let mut value_ptr: *mut c_char = ptr::null_mut();
         unsafe {
-            ffi::AMPL_InstanceGetName((*self.ampl).raw, name.as_ptr(), self.tuple.raw, &mut value_ptr);
+            let err = ffi::AMPL_InstanceGetName((*self.ampl).raw, name.as_ptr(), self.tuple.raw, &mut value_ptr);
+            check_ampl_error(err);
             if value_ptr.is_null() {
                 return String::new();
             }
@@ -39,7 +41,8 @@ impl Constraintinstance {
         let name = CString::new(&*self.name).unwrap();
         let mut value_ptr: *mut c_char = ptr::null_mut();
         unsafe {
-            ffi::AMPL_InstanceToString((*self.ampl).raw, name.as_ptr(), self.tuple.raw, &mut value_ptr);
+            let err = ffi::AMPL_InstanceToString((*self.ampl).raw, name.as_ptr(), self.tuple.raw, &mut value_ptr);
+            check_ampl_error(err);
             if value_ptr.is_null() {
                 return String::new();
             }
@@ -52,17 +55,15 @@ impl Constraintinstance {
     /// Drop this constraint instance from the active model.
     pub fn drop(&self) {
         let name = CString::new(&*self.name).unwrap();
-        unsafe {
-            ffi::AMPL_InstanceDrop((*self.ampl).raw, name.as_ptr(), self.tuple.raw);
-        }
+        let err = unsafe { ffi::AMPL_InstanceDrop((*self.ampl).raw, name.as_ptr(), self.tuple.raw) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Restore a previously dropped constraint instance.
     pub fn restore(&self) {
         let name = CString::new(&*self.name).unwrap();
-        unsafe {
-            ffi::AMPL_InstanceRestore((*self.ampl).raw, name.as_ptr(), self.tuple.raw);
-        }
+        let err = unsafe { ffi::AMPL_InstanceRestore((*self.ampl).raw, name.as_ptr(), self.tuple.raw) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Return the value of a numeric suffix for this constraint instance.
@@ -70,9 +71,10 @@ impl Constraintinstance {
         let name = CString::new(&*self.name).unwrap();
         let suffix_c = Numericsuffix::from(suffix);
         let mut value: f64 = 0.0;
-        unsafe {
-            ffi::AMPL_InstanceGetDoubleSuffix((*self.ampl).raw, name.as_ptr(), self.tuple.raw, suffix_c.into(), &mut value as *mut f64);
-        }
+        let err = unsafe {
+            ffi::AMPL_InstanceGetDoubleSuffix((*self.ampl).raw, name.as_ptr(), self.tuple.raw, suffix_c.into(), &mut value as *mut f64)
+        };
+        unsafe { check_ampl_error(err) };
         value
     }
 
@@ -81,9 +83,10 @@ impl Constraintinstance {
         let name = CString::new(&*self.name).unwrap();
         let suffix_c = Numericsuffix::from(suffix);
         let mut value: i32 = 0;
-        unsafe {
-            ffi::AMPL_InstanceGetIntSuffix((*self.ampl).raw, name.as_ptr(), self.tuple.raw, suffix_c.into(), &mut value as *mut i32);
-        }
+        let err = unsafe {
+            ffi::AMPL_InstanceGetIntSuffix((*self.ampl).raw, name.as_ptr(), self.tuple.raw, suffix_c.into(), &mut value as *mut i32)
+        };
+        unsafe { check_ampl_error(err) };
         value
     }
 
@@ -93,7 +96,8 @@ impl Constraintinstance {
         let suffix_c = Stringsuffix::from(suffix);
         let mut value_ptr: *mut c_char = ptr::null_mut();
         unsafe {
-            ffi::AMPL_InstanceGetStringSuffix((*self.ampl).raw, name.as_ptr(), self.tuple.raw, suffix_c.into(), &mut value_ptr);
+            let err = ffi::AMPL_InstanceGetStringSuffix((*self.ampl).raw, name.as_ptr(), self.tuple.raw, suffix_c.into(), &mut value_ptr);
+            check_ampl_error(err);
             if value_ptr.is_null() {
                 return String::new();
             }
@@ -106,8 +110,7 @@ impl Constraintinstance {
     /// Set the dual variable value for this constraint instance.
     pub fn set_dual(&self, value: f64) {
         let name = CString::new(&*self.name).unwrap();
-        unsafe {
-            ffi::AMPL_ConstraintInstanceSetDual((*self.ampl).raw, name.as_ptr(), self.tuple.raw, value);
-        }
+        let err = unsafe { ffi::AMPL_ConstraintInstanceSetDual((*self.ampl).raw, name.as_ptr(), self.tuple.raw, value) };
+        unsafe { check_ampl_error(err) };
     }
 }

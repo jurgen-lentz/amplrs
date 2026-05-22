@@ -1,5 +1,7 @@
 pub use ampl_sys as ffi;
 
+pub(crate) mod error;
+
 pub mod tuple;
 pub use tuple::*;
 

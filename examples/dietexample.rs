@@ -1,5 +1,5 @@
 use amplrs::ampl::Ampl;
-use amplrs::dataframe::DataFrame;
+use amplrs::dataframe::{DataFrame, Value};
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -18,29 +18,29 @@ fn main() {
 
     ampl.read(&format!("{}/diet/diet.mod", model_dir));
 
-    // Food set and its parameters
+    // Food set and its parameters — all columns declared up front
     let foods = ["BEEF", "CHK", "FISH", "HAM", "MCH", "MTL", "SPG", "TUR"];
     let costs = [3.59, 2.59, 2.29, 2.89, 1.89, 1.99, 1.99, 2.49];
-    let fmin = [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0];
-    let fmax = [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0];
+    let fmin  = [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0];
+    let fmax  = [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0];
 
-    let df = DataFrame::new(1, 0, &["FOOD"]);
-    df.set_column_strings("FOOD", &foods);
-    df.add_column_doubles("cost", &costs);
-    df.add_column_doubles("f_min", &fmin);
-    df.add_column_doubles("f_max", &fmax);
-    ampl.set_data(&df, Some("FOOD"));
+    let df_food = DataFrame::new(1, 3, &["FOOD", "cost", "f_min", "f_max"]);
+    df_food.set_column_strings("FOOD", &foods);
+    df_food.set_column_doubles("cost", &costs);
+    df_food.set_column_doubles("f_min", &fmin);
+    df_food.set_column_doubles("f_max", &fmax);
+    ampl.set_data(&df_food, Some("FOOD"));
 
-    // Nutrient set and its parameters
+    // Nutrient set and its parameters — all columns declared up front
     let nutrients = ["A", "C", "B1", "B2", "NA", "CAL"];
     let nmin = [700.0, 700.0, 700.0, 700.0, 0.0, 16000.0];
     let nmax = [20000.0, 20000.0, 20000.0, 20000.0, 50000.0, 24000.0];
 
-    let df2 = DataFrame::new(1, 0, &["NUTR"]);
-    df2.set_column_strings("NUTR", &nutrients);
-    df2.add_column_doubles("n_min", &nmin);
-    df2.add_column_doubles("n_max", &nmax);
-    ampl.set_data(&df2, Some("NUTR"));
+    let df_nutr = DataFrame::new(1, 2, &["NUTR", "n_min", "n_max"]);
+    df_nutr.set_column_strings("NUTR", &nutrients);
+    df_nutr.set_column_doubles("n_min", &nmin);
+    df_nutr.set_column_doubles("n_max", &nmax);
+    ampl.set_data(&df_nutr, Some("NUTR"));
 
     // Amount matrix: rows = nutrients (6), cols = foods (8), row-major
     #[rustfmt::skip]
@@ -53,9 +53,18 @@ fn main() {
         295.0,  770.0, 440.0, 430.0,  315.0,  400.0,  379.0,  450.0,  // CAL
     ];
 
-    let df3 = DataFrame::new(2, 1, &["NUTR", "FOOD", "amt"]);
-    df3.set_matrix(&nutrients, &foods, amounts);
-    ampl.set_data(&df3, None);
+    let df_amt = DataFrame::new(2, 1, &["NUTR", "FOOD", "amt"]);
+    df_amt.reserve(nutrients.len() * foods.len());
+    for (i, &nutr) in nutrients.iter().enumerate() {
+        for (j, &food) in foods.iter().enumerate() {
+            df_amt.add_row(&[
+                Value::Text(nutr.to_string()),
+                Value::Text(food.to_string()),
+                Value::Numeric(amounts[i * foods.len() + j]),
+            ]);
+        }
+    }
+    ampl.set_data(&df_amt, None);
 
     ampl.solve("", "");
 

@@ -1,3 +1,4 @@
+use crate::error::check_ampl_error;
 use crate::ffi;
 use crate::constraint::Constraint;
 use crate::dataframe::DataFrame;
@@ -8,7 +9,6 @@ use crate::variable::Variable;
 extern crate libc;
 
 use libc::c_char;
-//use std::ffi::{c_int, CStr, CString};
 use std::ffi::{CStr, CString};
 use std::ptr;
 use std::mem::MaybeUninit;
@@ -25,7 +25,8 @@ impl Ampl {
     /// Create a new AMPL interpreter instance using the system PATH to locate the binary.
     pub fn new() -> Self {
         let mut ampl = MaybeUninit::uninit();
-        unsafe { ffi::AMPL_Create(ampl.as_mut_ptr()) };
+        let err = unsafe { ffi::AMPL_Create(ampl.as_mut_ptr()) };
+        unsafe { check_ampl_error(err) };
         let ampl = unsafe { ampl.assume_init() };
         Ampl { raw: ampl }
     }
@@ -40,7 +41,8 @@ impl Ampl {
     /// Evaluate an arbitrary AMPL statement or expression.
     pub fn eval(&mut self, statement: &str) {
         let statement = CString::new(statement).unwrap();
-        unsafe { ffi::AMPL_Eval(self.raw, statement.as_ptr()) };
+        let err = unsafe { ffi::AMPL_Eval(self.raw, statement.as_ptr()) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Solve the current problem, optionally specifying a sub-problem name and a solver.
@@ -48,36 +50,42 @@ impl Ampl {
     pub fn solve(&self, problem: &str, solver: &str) {
         let problem = CString::new(problem).unwrap();
         let solver = CString::new(solver).unwrap();
-        unsafe { ffi::AMPL_Solve(self.raw, problem.as_ptr(), solver.as_ptr()) };
+        let err = unsafe { ffi::AMPL_Solve(self.raw, problem.as_ptr(), solver.as_ptr()) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Reset the AMPL interpreter to a clean state, discarding model and data.
     pub fn reset(&mut self) {
-        unsafe { ffi::AMPL_Reset(self.raw) };
+        let err = unsafe { ffi::AMPL_Reset(self.raw) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Close the underlying AMPL process. The instance should not be used afterward.
     pub fn close(&mut self) {
-        unsafe { ffi::AMPL_Close(self.raw) };
+        let err = unsafe { ffi::AMPL_Close(self.raw) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Return `true` if the underlying AMPL process is running.
     pub fn is_running(&mut self) -> bool {
         let mut running: bool = false;
-        unsafe { ffi::AMPL_IsRunning(self.raw, &mut running as *mut bool); }
+        let err = unsafe { ffi::AMPL_IsRunning(self.raw, &mut running as *mut bool) };
+        unsafe { check_ampl_error(err) };
         running
     }
 
     /// Return `true` if AMPL is currently busy (e.g. solving asynchronously).
     pub fn is_busy(&mut self) -> bool {
         let mut busy: bool = false;
-        unsafe { ffi::AMPL_IsBusy(self.raw, &mut busy as *mut bool); }
+        let err = unsafe { ffi::AMPL_IsBusy(self.raw, &mut busy as *mut bool) };
+        unsafe { check_ampl_error(err) };
         busy
     }
 
     /// Send an interrupt signal to the running AMPL process.
     pub fn interrupt(&mut self) {
-        unsafe { ffi::AMPL_Interrupt(self.raw) };
+        let err = unsafe { ffi::AMPL_Interrupt(self.raw) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Write a snapshot of the current session to `filename`.
@@ -88,7 +96,8 @@ impl Ampl {
         let filename = CString::new(filename).unwrap();
         let mut snapshot_ptr: *mut c_char = ptr::null_mut();
         unsafe {
-            ffi::AMPL_Snapshot(self.raw, filename.as_ptr(), model, data, options, &mut snapshot_ptr);
+            let err = ffi::AMPL_Snapshot(self.raw, filename.as_ptr(), model, data, options, &mut snapshot_ptr);
+            check_ampl_error(err);
             if snapshot_ptr.is_null() {
                 return String::new();
             }
@@ -103,7 +112,8 @@ impl Ampl {
         let filename = CString::new(filename).unwrap();
         let mut model_ptr: *mut c_char = ptr::null_mut();
         unsafe {
-            ffi::AMPL_ExportModel(self.raw, filename.as_ptr(), &mut model_ptr);
+            let err = ffi::AMPL_ExportModel(self.raw, filename.as_ptr(), &mut model_ptr);
+            check_ampl_error(err);
             if model_ptr.is_null() {
                 return String::new();
             }
@@ -118,7 +128,8 @@ impl Ampl {
         let filename = CString::new(filename).unwrap();
         let mut data_ptr: *mut c_char = ptr::null_mut();
         unsafe {
-            ffi::AMPL_ExportData(self.raw, filename.as_ptr(), &mut data_ptr);
+            let err = ffi::AMPL_ExportData(self.raw, filename.as_ptr(), &mut data_ptr);
+            check_ampl_error(err);
             if data_ptr.is_null() {
                 return String::new();
             }
@@ -132,7 +143,8 @@ impl Ampl {
     pub fn get_current_objective(&mut self) -> String {
         let mut objective_ptr: *mut c_char = ptr::null_mut();
         unsafe {
-            ffi::AMPL_GetCurrentObjective(self.raw, &mut objective_ptr);
+            let err = ffi::AMPL_GetCurrentObjective(self.raw, &mut objective_ptr);
+            check_ampl_error(err);
             if objective_ptr.is_null() {
                 return String::new();
             }
@@ -146,25 +158,29 @@ impl Ampl {
     pub fn set_option(&mut self, option: &str, value: &str) {
         let option = CString::new(option).unwrap();
         let value = CString::new(value).unwrap();
-        unsafe { ffi::AMPL_SetOption(self.raw, option.as_ptr(), value.as_ptr()) };
+        let err = unsafe { ffi::AMPL_SetOption(self.raw, option.as_ptr(), value.as_ptr()) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Set a boolean AMPL option.
     pub fn set_bool_option(&mut self, option: &str, value: bool) {
         let option = CString::new(option).unwrap();
-        unsafe { ffi::AMPL_SetBoolOption(self.raw, option.as_ptr(), value) };
+        let err = unsafe { ffi::AMPL_SetBoolOption(self.raw, option.as_ptr(), value) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Set an integer AMPL option.
     pub fn set_int_option(&mut self, option: &str, value: i32) {
         let option = CString::new(option).unwrap();
-        unsafe { ffi::AMPL_SetIntOption(self.raw, option.as_ptr(), value) };
+        let err = unsafe { ffi::AMPL_SetIntOption(self.raw, option.as_ptr(), value) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Set a double AMPL option.
     pub fn set_dbl_option(&mut self, option: &str, value: f64) {
         let option = CString::new(option).unwrap();
-        unsafe { ffi::AMPL_SetDblOption(self.raw, option.as_ptr(), value) };
+        let err = unsafe { ffi::AMPL_SetDblOption(self.raw, option.as_ptr(), value) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Get the string value of an AMPL option. Returns an empty string if the option does not exist.
@@ -173,7 +189,8 @@ impl Ampl {
         let mut exists: bool = false;
         let mut value_ptr: *mut c_char = ptr::null_mut();
         unsafe {
-            ffi::AMPL_GetOption(self.raw, option.as_ptr(), &mut exists as *mut bool, &mut value_ptr);
+            let err = ffi::AMPL_GetOption(self.raw, option.as_ptr(), &mut exists as *mut bool, &mut value_ptr);
+            check_ampl_error(err);
             if value_ptr.is_null() {
                 return String::new();
             }
@@ -188,7 +205,8 @@ impl Ampl {
         let option = CString::new(option).unwrap();
         let mut exists: bool = false;
         let mut value: bool = false;
-        unsafe { ffi::AMPL_GetBoolOption(self.raw, option.as_ptr(), &mut exists as *mut bool, &mut value as *mut bool) };
+        let err = unsafe { ffi::AMPL_GetBoolOption(self.raw, option.as_ptr(), &mut exists as *mut bool, &mut value as *mut bool) };
+        unsafe { check_ampl_error(err) };
         value
     }
 
@@ -197,7 +215,8 @@ impl Ampl {
         let option = CString::new(option).unwrap();
         let mut exists: bool = false;
         let mut value: i32 = 0;
-        unsafe { ffi::AMPL_GetIntOption(self.raw, option.as_ptr(), &mut exists as *mut bool, &mut value as *mut i32) };
+        let err = unsafe { ffi::AMPL_GetIntOption(self.raw, option.as_ptr(), &mut exists as *mut bool, &mut value as *mut i32) };
+        unsafe { check_ampl_error(err) };
         value
     }
 
@@ -206,39 +225,45 @@ impl Ampl {
         let option = CString::new(option).unwrap();
         let mut exists: bool = false;
         let mut value: f64 = 0.0;
-        unsafe { ffi::AMPL_GetDblOption(self.raw, option.as_ptr(), &mut exists as *mut bool, &mut value as *mut f64) };
+        let err = unsafe { ffi::AMPL_GetDblOption(self.raw, option.as_ptr(), &mut exists as *mut bool, &mut value as *mut f64) };
+        unsafe { check_ampl_error(err) };
         value
     }
 
     /// Read and execute an AMPL model file at `filename`.
     pub fn read(&mut self, filename: &str) {
         let filename = CString::new(filename).unwrap();
-        unsafe { ffi::AMPL_Read(self.raw, filename.as_ptr()) };
+        let err = unsafe { ffi::AMPL_Read(self.raw, filename.as_ptr()) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Read an AMPL data file at `filename`.
     pub fn read_data(&mut self, filename: &str) {
         let filename = CString::new(filename).unwrap();
-        unsafe { ffi::AMPL_ReadData(self.raw, filename.as_ptr()) };
+        let err = unsafe { ffi::AMPL_ReadData(self.raw, filename.as_ptr()) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Read a table named `tablename` into AMPL (equivalent to `read table tablename;`).
     pub fn read_table(&mut self, tablename: &str) {
         let tablename = CString::new(tablename).unwrap();
-        unsafe { ffi::AMPL_ReadTable(self.raw, tablename.as_ptr()) };
+        let err = unsafe { ffi::AMPL_ReadTable(self.raw, tablename.as_ptr()) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Write a table named `tablename` from AMPL (equivalent to `write table tablename;`).
     pub fn write_table(&mut self, tablename: &str) {
         let tablename = CString::new(tablename).unwrap();
-        unsafe { ffi::AMPL_WriteTable(self.raw, tablename.as_ptr()) };
+        let err = unsafe { ffi::AMPL_WriteTable(self.raw, tablename.as_ptr()) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Write the model to `filename` with auxiliary files listed in `auxfiles`.
     pub fn write(&mut self, filename: &str, auxfiles: &str) {
         let filename = CString::new(filename).unwrap();
         let auxfiles = CString::new(auxfiles).unwrap();
-        unsafe { ffi::AMPL_Write(self.raw, filename.as_ptr(), auxfiles.as_ptr()) };
+        let err = unsafe { ffi::AMPL_Write(self.raw, filename.as_ptr(), auxfiles.as_ptr()) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Assign data from `df` to the AMPL entities whose names match the DataFrame's column headers.
@@ -247,7 +272,8 @@ impl Ampl {
     pub fn set_data(&mut self, df: &DataFrame, set_name: Option<&str>) {
         let set_name_c = set_name.map(|s| CString::new(s).unwrap());
         let set_name_ptr = set_name_c.as_ref().map(|s| s.as_ptr()).unwrap_or(ptr::null());
-        unsafe { ffi::AMPL_SetData(self.raw, df.raw, set_name_ptr) };
+        let err = unsafe { ffi::AMPL_SetData(self.raw, df.raw, set_name_ptr) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Retrieve data from AMPL for the given display `statements` and return it as a DataFrame.
@@ -260,7 +286,8 @@ impl Ampl {
             .collect();
         let ptrs: Vec<*const libc::c_char> = cstrings.iter().map(|s| s.as_ptr()).collect();
         let mut df: *mut ffi::AMPL_DATAFRAME = ptr::null_mut();
-        unsafe { ffi::AMPL_GetData(self.raw, ptrs.as_ptr(), statements.len(), &mut df) };
+        let err = unsafe { ffi::AMPL_GetData(self.raw, ptrs.as_ptr(), statements.len(), &mut df) };
+        unsafe { check_ampl_error(err) };
         DataFrame { raw: df }
     }
 
@@ -273,11 +300,10 @@ impl Ampl {
     pub fn get_constraints(&mut self) -> Vec<Constraint> {
         let mut size: usize = 0;
         let mut names: *mut *mut c_char = ptr::null_mut();
-
-        unsafe { ffi::AMPL_GetConstraints(self.raw, &mut size, &mut names) };
+        let err = unsafe { ffi::AMPL_GetConstraints(self.raw, &mut size, &mut names) };
+        unsafe { check_ampl_error(err) };
 
         let mut constraints = Vec::with_capacity(size);
-
         unsafe {
             for i in 0..size {
                 let name_ptr = *names.add(i);
@@ -285,7 +311,6 @@ impl Ampl {
                 constraints.push(Constraint::new(self, name_string));
                 ffi::AMPL_StringFree(names.add(i));
             }
-
             libc::free(names as *mut libc::c_void);
         }
         constraints
@@ -300,11 +325,10 @@ impl Ampl {
     pub fn get_objectives(&mut self) -> Vec<Objective> {
         let mut size: usize = 0;
         let mut names: *mut *mut c_char = ptr::null_mut();
-
-        unsafe { ffi::AMPL_GetObjectives(self.raw, &mut size, &mut names) };
+        let err = unsafe { ffi::AMPL_GetObjectives(self.raw, &mut size, &mut names) };
+        unsafe { check_ampl_error(err) };
 
         let mut objectives = Vec::with_capacity(size);
-
         unsafe {
             for i in 0..size {
                 let name_ptr = *names.add(i);
@@ -312,7 +336,6 @@ impl Ampl {
                 objectives.push(Objective {raw: self.raw, name: name_string});
                 ffi::AMPL_StringFree(names.add(i));
             }
-
             libc::free(names as *mut libc::c_void);
         }
         objectives
@@ -327,11 +350,10 @@ impl Ampl {
     pub fn get_parameters(&mut self) -> Vec<Parameter> {
         let mut size: usize = 0;
         let mut names: *mut *mut c_char = ptr::null_mut();
-
-        unsafe { ffi::AMPL_GetParameters(self.raw, &mut size, &mut names) };
+        let err = unsafe { ffi::AMPL_GetParameters(self.raw, &mut size, &mut names) };
+        unsafe { check_ampl_error(err) };
 
         let mut parameters = Vec::with_capacity(size);
-
         unsafe {
             for i in 0..size {
                 let name_ptr = *names.add(i);
@@ -339,7 +361,6 @@ impl Ampl {
                 parameters.push(Parameter::new(self, name_string));
                 ffi::AMPL_StringFree(names.add(i));
             }
-
             libc::free(names as *mut libc::c_void);
         }
         parameters
@@ -354,11 +375,10 @@ impl Ampl {
     pub fn get_sets(&mut self) -> Vec<Set> {
         let mut size: usize = 0;
         let mut names: *mut *mut c_char = ptr::null_mut();
-
-        unsafe { ffi::AMPL_GetSets(self.raw, &mut size, &mut names) };
+        let err = unsafe { ffi::AMPL_GetSets(self.raw, &mut size, &mut names) };
+        unsafe { check_ampl_error(err) };
 
         let mut sets = Vec::with_capacity(size);
-
         unsafe {
             for i in 0..size {
                 let name_ptr = *names.add(i);
@@ -366,7 +386,6 @@ impl Ampl {
                 sets.push(Set::new(self, name_string));
                 ffi::AMPL_StringFree(names.add(i));
             }
-
             libc::free(names as *mut libc::c_void);
         }
         sets
@@ -381,11 +400,10 @@ impl Ampl {
     pub fn get_variables(&mut self) -> Vec<Variable> {
         let mut size: usize = 0;
         let mut names: *mut *mut c_char = ptr::null_mut();
-
-        unsafe { ffi::AMPL_GetVariables(self.raw, &mut size, &mut names) };
+        let err = unsafe { ffi::AMPL_GetVariables(self.raw, &mut size, &mut names) };
+        unsafe { check_ampl_error(err) };
 
         let mut variables = Vec::with_capacity(size);
-
         unsafe {
             for i in 0..size {
                 let name_ptr = *names.add(i);
@@ -393,7 +411,6 @@ impl Ampl {
                 variables.push(Variable {ampl: self, name: name_string});
                 ffi::AMPL_StringFree(names.add(i));
             }
-
             libc::free(names as *mut libc::c_void);
         }
         variables

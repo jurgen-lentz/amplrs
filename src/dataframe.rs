@@ -1,3 +1,4 @@
+use crate::error::check_ampl_error;
 use crate::ffi;
 
 use libc::c_char;
@@ -46,34 +47,39 @@ impl DataFrame {
         let cstrings: Vec<CString> = headers.iter()
             .map(|&s| CString::new(s).unwrap())
             .collect();
-        let c_ptrs: Vec<*const c_char> = cstrings.iter()
+        let mut c_ptrs: Vec<*const c_char> = cstrings.iter()
             .map(|s| s.as_ptr())
             .collect();
+        c_ptrs.push(ptr::null()); // AMPL_DataFrameCreate reads until null
         let mut df: *mut ffi::AMPL_DATAFRAME = ptr::null_mut();
-        unsafe {
-            ffi::AMPL_DataFrameCreate(&mut df, num_index_cols, num_data_cols, c_ptrs.as_ptr());
-        }
+        let err = unsafe {
+            ffi::AMPL_DataFrameCreate(&mut df, num_index_cols, num_data_cols, c_ptrs.as_ptr())
+        };
+        unsafe { check_ampl_error(err) };
         DataFrame { raw: df }
     }
 
     /// Return the number of data rows.
     pub fn num_rows(&self) -> usize {
         let mut n: usize = 0;
-        unsafe { ffi::AMPL_DataFrameGetNumRows(self.raw, &mut n) };
+        let err = unsafe { ffi::AMPL_DataFrameGetNumRows(self.raw, &mut n) };
+        unsafe { check_ampl_error(err) };
         n
     }
 
     /// Return the total number of columns (index columns + data columns).
     pub fn num_cols(&self) -> usize {
         let mut n: usize = 0;
-        unsafe { ffi::AMPL_DataFrameGetNumCols(self.raw, &mut n) };
+        let err = unsafe { ffi::AMPL_DataFrameGetNumCols(self.raw, &mut n) };
+        unsafe { check_ampl_error(err) };
         n
     }
 
     /// Return the number of index columns.
     pub fn num_indices(&self) -> usize {
         let mut n: usize = 0;
-        unsafe { ffi::AMPL_DataFrameGetNumIndices(self.raw, &mut n) };
+        let err = unsafe { ffi::AMPL_DataFrameGetNumIndices(self.raw, &mut n) };
+        unsafe { check_ampl_error(err) };
         n
     }
 
@@ -82,7 +88,8 @@ impl DataFrame {
         let mut size: usize = 0;
         let mut headers_ptr: *mut *mut c_char = ptr::null_mut();
         unsafe {
-            ffi::AMPL_DataFrameGetHeaders(self.raw, &mut size, &mut headers_ptr);
+            let err = ffi::AMPL_DataFrameGetHeaders(self.raw, &mut size, &mut headers_ptr);
+            check_ampl_error(err);
             let mut result = Vec::with_capacity(size);
             for i in 0..size {
                 let s = CStr::from_ptr(*headers_ptr.add(i)).to_str().unwrap().to_string();
@@ -96,7 +103,8 @@ impl DataFrame {
 
     /// Pre-allocate space for `n` rows. Rows still must be added one by one via [`add_row`].
     pub fn reserve(&self, n: usize) {
-        unsafe { ffi::AMPL_DataFrameReserve(self.raw, n) };
+        let err = unsafe { ffi::AMPL_DataFrameReserve(self.raw, n) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Append a row of mixed-type values. The number of values must equal `num_cols()`.
@@ -118,7 +126,8 @@ impl DataFrame {
         let mut tuple: *mut ffi::AMPL_TUPLE = ptr::null_mut();
         unsafe {
             ffi::AMPL_TupleCreate(&mut tuple, variant_ptrs.len(), variant_ptrs.as_mut_ptr());
-            ffi::AMPL_DataFrameAddRow(self.raw, tuple);
+            let err = ffi::AMPL_DataFrameAddRow(self.raw, tuple);
+            check_ampl_error(err);
             ffi::AMPL_TupleFree(&mut tuple);
             for var in &mut variant_ptrs {
                 ffi::AMPL_VariantFree(var);
@@ -144,9 +153,10 @@ impl DataFrame {
     /// The length of `values` must equal the current row count.
     pub fn add_column_doubles(&self, header: &str, values: &[f64]) {
         let header_c = CString::new(header).unwrap();
-        unsafe {
-            ffi::AMPL_DataFrameAddColumnDouble(self.raw, header_c.as_ptr(), values.as_ptr());
-        }
+        let err = unsafe {
+            ffi::AMPL_DataFrameAddColumnDouble(self.raw, header_c.as_ptr(), values.as_ptr())
+        };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Append a new string data column named `header` with the given values.
@@ -157,22 +167,24 @@ impl DataFrame {
         let header_c = CString::new(header).unwrap();
         let cstrings: Vec<CString> = values.iter().map(|&s| CString::new(s).unwrap()).collect();
         let mut ptrs: Vec<*const c_char> = cstrings.iter().map(|s| s.as_ptr()).collect();
-        unsafe {
-            ffi::AMPL_DataFrameAddColumnString(self.raw, header_c.as_ptr(), ptrs.as_mut_ptr());
-        }
+        let err = unsafe {
+            ffi::AMPL_DataFrameAddColumnString(self.raw, header_c.as_ptr(), ptrs.as_mut_ptr())
+        };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Overwrite an entire numeric column identified by `header` with the given values.
     pub fn set_column_doubles(&self, header: &str, values: &[f64]) {
         let header_c = CString::new(header).unwrap();
-        unsafe {
+        let err = unsafe {
             ffi::AMPL_DataFrameSetColumnArgDouble(
                 self.raw,
                 header_c.as_ptr(),
                 values.as_ptr(),
                 values.len(),
-            );
-        }
+            )
+        };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Overwrite an entire string column identified by `header` with the given values.
@@ -180,14 +192,15 @@ impl DataFrame {
         let header_c = CString::new(header).unwrap();
         let cstrings: Vec<CString> = values.iter().map(|&s| CString::new(s).unwrap()).collect();
         let ptrs: Vec<*const c_char> = cstrings.iter().map(|s| s.as_ptr()).collect();
-        unsafe {
+        let err = unsafe {
             ffi::AMPL_DataFrameSetColumnArgString(
                 self.raw,
                 header_c.as_ptr(),
                 ptrs.as_ptr(),
                 values.len(),
-            );
-        }
+            )
+        };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Set the value at the given 0-based `(row, col)` position.
@@ -201,7 +214,8 @@ impl DataFrame {
                     ffi::AMPL_VariantCreateString(&mut var, cs.as_ptr());
                 }
             }
-            ffi::AMPL_DataFrameSetValueByIndex(self.raw, row, col, var);
+            let err = ffi::AMPL_DataFrameSetValueByIndex(self.raw, row, col, var);
+            check_ampl_error(err);
             ffi::AMPL_VariantFree(&mut var);
         }
     }
@@ -210,7 +224,8 @@ impl DataFrame {
     pub fn get_value(&self, row: usize, col: usize) -> Value {
         let mut var: *mut ffi::AMPL_VARIANT = ptr::null_mut();
         unsafe {
-            ffi::AMPL_DataFrameElement(self.raw, row, col, &mut var);
+            let err = ffi::AMPL_DataFrameElement(self.raw, row, col, &mut var);
+            check_ampl_error(err);
             let mut type_: ffi::AMPL_TYPE = ffi::AMPL_TYPE_AMPL_NUMERIC;
             ffi::AMPL_VariantGetType(var, &mut type_);
             let result = if type_ == ffi::AMPL_TYPE_AMPL_STRING {
@@ -241,7 +256,8 @@ impl DataFrame {
         let mut args: *mut ffi::AMPL_ARGS = ptr::null_mut();
         unsafe {
             ffi::AMPL_ArgsCreateString(&mut args, ptrs.as_ptr());
-            ffi::AMPL_DataFrameSetArray(self.raw, values.as_ptr(), values.len(), args);
+            let err = ffi::AMPL_DataFrameSetArray(self.raw, values.as_ptr(), values.len(), args);
+            check_ampl_error(err);
             ffi::AMPL_ArgsDestroy(&mut args);
         }
     }
@@ -253,7 +269,7 @@ impl DataFrame {
         let row_ptrs: Vec<*const c_char> = row_cs.iter().map(|s| s.as_ptr()).collect();
         let col_cs: Vec<CString> = col_indices.iter().map(|&s| CString::new(s).unwrap()).collect();
         let col_ptrs: Vec<*const c_char> = col_cs.iter().map(|s| s.as_ptr()).collect();
-        unsafe {
+        let err = unsafe {
             ffi::AMPL_DataFrameSetMatrixStringString(
                 self.raw,
                 values.as_ptr(),
@@ -261,15 +277,17 @@ impl DataFrame {
                 row_ptrs.as_ptr(),
                 col_indices.len(),
                 col_ptrs.as_ptr(),
-            );
-        }
+            )
+        };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Return a human-readable tabular string representation of the DataFrame.
     pub fn to_string(&self) -> String {
         let mut ptr: *mut c_char = ptr::null_mut();
         unsafe {
-            ffi::AMPL_DataFrameToString(self.raw, &mut ptr);
+            let err = ffi::AMPL_DataFrameToString(self.raw, &mut ptr);
+            check_ampl_error(err);
             if ptr.is_null() {
                 return String::new();
             }

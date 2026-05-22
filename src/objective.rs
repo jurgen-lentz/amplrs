@@ -1,3 +1,4 @@
+use crate::error::check_ampl_error;
 use crate::ffi;
 use crate::suffix::Numericsuffix;
 use crate::suffix::Stringsuffix;
@@ -24,7 +25,8 @@ impl Objective {
   pub fn indexarity(&self) -> usize {
     let name = CString::new(&*self.name).unwrap();
     let mut indexarity: usize = 0;
-    unsafe { ffi::AMPL_EntityGetIndexarity(self.raw, name.as_ptr(), &mut indexarity as *mut usize) };
+    let err = unsafe { ffi::AMPL_EntityGetIndexarity(self.raw, name.as_ptr(), &mut indexarity as *mut usize) };
+    unsafe { check_ampl_error(err) };
     indexarity
   }
 
@@ -32,7 +34,8 @@ impl Objective {
   pub fn num_instances(&self) -> usize {
     let name = CString::new(&*self.name).unwrap();
     let mut num_instances: usize = 0;
-    unsafe { ffi::AMPL_EntityGetNumInstances(self.raw, name.as_ptr(), &mut num_instances as *mut usize) };
+    let err = unsafe { ffi::AMPL_EntityGetNumInstances(self.raw, name.as_ptr(), &mut num_instances as *mut usize) };
+    unsafe { check_ampl_error(err) };
     num_instances
   }
 
@@ -41,7 +44,8 @@ impl Objective {
     let name = CString::new(&*self.name).unwrap();
     let mut value_ptr: *mut c_char = ptr::null_mut();
     unsafe {
-      ffi::AMPL_EntityGetDeclaration(self.raw, name.as_ptr(), &mut value_ptr);
+      let err = ffi::AMPL_EntityGetDeclaration(self.raw, name.as_ptr(), &mut value_ptr);
+      check_ampl_error(err);
       if value_ptr.is_null() {
         return String::new();
       }
@@ -54,13 +58,15 @@ impl Objective {
   /// Drop this objective from the current model.
   pub fn drop(&self) {
     let name = CString::new(&*self.name).unwrap();
-    unsafe { ffi::AMPL_EntityDrop(self.raw, name.as_ptr()) };
+    let err = unsafe { ffi::AMPL_EntityDrop(self.raw, name.as_ptr()) };
+    unsafe { check_ampl_error(err) };
   }
 
   /// Restore a previously dropped objective.
   pub fn restore(&self) {
     let name = CString::new(&*self.name).unwrap();
-    unsafe { ffi::AMPL_EntityRestore(self.raw, name.as_ptr()) };
+    let err = unsafe { ffi::AMPL_EntityRestore(self.raw, name.as_ptr()) };
+    unsafe { check_ampl_error(err) };
   }
 
   /// Return the current objective value (`.val` suffix) for a scalar objective.
@@ -68,7 +74,8 @@ impl Objective {
     let name = CString::new(&*self.name).unwrap();
     let suffix_c = Numericsuffix::from(Numericsuffix::Value);
     let mut value: f64 = 0.0;
-    unsafe { ffi::AMPL_InstanceGetDoubleSuffix(self.raw, name.as_ptr(), std::ptr::null_mut(), suffix_c.into(), &mut value as *mut f64) };
+    let err = unsafe { ffi::AMPL_InstanceGetDoubleSuffix(self.raw, name.as_ptr(), std::ptr::null_mut(), suffix_c.into(), &mut value as *mut f64) };
+    unsafe { check_ampl_error(err) };
     value
   }
 
@@ -78,7 +85,8 @@ impl Objective {
     let suffix_c = Stringsuffix::from(Stringsuffix::Astatus);
     let mut value_ptr: *mut c_char = ptr::null_mut();
     unsafe {
-      ffi::AMPL_InstanceGetStringSuffix(self.raw, name.as_ptr(), std::ptr::null_mut(), suffix_c.into(), &mut value_ptr);
+      let err = ffi::AMPL_InstanceGetStringSuffix(self.raw, name.as_ptr(), std::ptr::null_mut(), suffix_c.into(), &mut value_ptr);
+      check_ampl_error(err);
       if value_ptr.is_null() {
         return String::new();
       }
@@ -94,7 +102,8 @@ impl Objective {
     let suffix_c = Stringsuffix::from(Stringsuffix::Sstatus);
     let mut value_ptr: *mut c_char = ptr::null_mut();
     unsafe {
-      ffi::AMPL_InstanceGetStringSuffix(self.raw, name.as_ptr(), std::ptr::null_mut(), suffix_c.into(), &mut value_ptr);
+      let err = ffi::AMPL_InstanceGetStringSuffix(self.raw, name.as_ptr(), std::ptr::null_mut(), suffix_c.into(), &mut value_ptr);
+      check_ampl_error(err);
       if value_ptr.is_null() {
         return String::new();
       }
@@ -109,9 +118,10 @@ impl Objective {
     let name = CString::new(&*self.name).unwrap();
     let suffix_c = Numericsuffix::from(Numericsuffix::Exitcode);
     let mut value: c_int = 0;
-    unsafe {
-      ffi::AMPL_InstanceGetIntSuffix(self.raw, name.as_ptr(), std::ptr::null_mut(), suffix_c.into(), &mut value);
-    }
+    let err = unsafe {
+      ffi::AMPL_InstanceGetIntSuffix(self.raw, name.as_ptr(), std::ptr::null_mut(), suffix_c.into(), &mut value)
+    };
+    unsafe { check_ampl_error(err) };
     value
   }
 
@@ -121,7 +131,8 @@ impl Objective {
     let suffix_c = Stringsuffix::from(Stringsuffix::Message);
     let mut value_ptr: *mut c_char = ptr::null_mut();
     unsafe {
-      ffi::AMPL_InstanceGetStringSuffix(self.raw, name.as_ptr(), std::ptr::null_mut(), suffix_c.into(), &mut value_ptr);
+      let err = ffi::AMPL_InstanceGetStringSuffix(self.raw, name.as_ptr(), std::ptr::null_mut(), suffix_c.into(), &mut value_ptr);
+      check_ampl_error(err);
       if value_ptr.is_null() {
         return String::new();
       }
@@ -137,7 +148,8 @@ impl Objective {
     let suffix_c = Stringsuffix::from(Stringsuffix::Result);
     let mut value_ptr: *mut c_char = ptr::null_mut();
     unsafe {
-      ffi::AMPL_InstanceGetStringSuffix(self.raw, name.as_ptr(), std::ptr::null_mut(), suffix_c.into(), &mut value_ptr);
+      let err = ffi::AMPL_InstanceGetStringSuffix(self.raw, name.as_ptr(), std::ptr::null_mut(), suffix_c.into(), &mut value_ptr);
+      check_ampl_error(err);
       if value_ptr.is_null() {
         return String::new();
       }
@@ -153,7 +165,8 @@ impl Objective {
     let suffix_c = Stringsuffix::from(Stringsuffix::Sense);
     let mut value_ptr: *mut c_char = ptr::null_mut();
     unsafe {
-      ffi::AMPL_InstanceGetStringSuffix(self.raw, name.as_ptr(), std::ptr::null_mut(), suffix_c.into(), &mut value_ptr);
+      let err = ffi::AMPL_InstanceGetStringSuffix(self.raw, name.as_ptr(), std::ptr::null_mut(), suffix_c.into(), &mut value_ptr);
+      check_ampl_error(err);
       let value_str = CStr::from_ptr(value_ptr).to_str().unwrap().to_string();
       ffi::AMPL_StringFree(&mut value_ptr);
       value_str == "minimize"

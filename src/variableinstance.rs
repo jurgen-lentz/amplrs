@@ -1,3 +1,4 @@
+use crate::error::check_ampl_error;
 use crate::ffi;
 use crate::ampl::Ampl;
 use crate::suffix::{Numericsuffix, Stringsuffix};
@@ -24,7 +25,8 @@ impl Variableinstance {
         let name = CString::new(&*self.name).unwrap();
         let mut value_ptr: *mut c_char = ptr::null_mut();
         unsafe {
-            ffi::AMPL_InstanceGetName((*self.ampl).raw, name.as_ptr(), self.tuple.raw, &mut value_ptr);
+            let err = ffi::AMPL_InstanceGetName((*self.ampl).raw, name.as_ptr(), self.tuple.raw, &mut value_ptr);
+            check_ampl_error(err);
             if value_ptr.is_null() {
                 return String::new();
             }
@@ -39,7 +41,8 @@ impl Variableinstance {
         let name = CString::new(&*self.name).unwrap();
         let mut value_ptr: *mut c_char = ptr::null_mut();
         unsafe {
-            ffi::AMPL_VariableInstanceToString((*self.ampl).raw, name.as_ptr(), self.tuple.raw, &mut value_ptr);
+            let err = ffi::AMPL_VariableInstanceToString((*self.ampl).raw, name.as_ptr(), self.tuple.raw, &mut value_ptr);
+            check_ampl_error(err);
             if value_ptr.is_null() {
                 return String::new();
             }
@@ -52,17 +55,15 @@ impl Variableinstance {
     /// Drop this variable instance from the active model.
     pub fn drop(&self) {
         let name = CString::new(&*self.name).unwrap();
-        unsafe {
-            ffi::AMPL_InstanceDrop((*self.ampl).raw, name.as_ptr(), self.tuple.raw);
-        }
+        let err = unsafe { ffi::AMPL_InstanceDrop((*self.ampl).raw, name.as_ptr(), self.tuple.raw) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Restore a previously dropped variable instance.
     pub fn restore(&self) {
         let name = CString::new(&*self.name).unwrap();
-        unsafe {
-            ffi::AMPL_InstanceRestore((*self.ampl).raw, name.as_ptr(), self.tuple.raw);
-        }
+        let err = unsafe { ffi::AMPL_InstanceRestore((*self.ampl).raw, name.as_ptr(), self.tuple.raw) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Return the value of a numeric suffix for this variable instance.
@@ -70,9 +71,10 @@ impl Variableinstance {
         let name = CString::new(&*self.name).unwrap();
         let suffix_c = Numericsuffix::from(suffix);
         let mut value: f64 = 0.0;
-        unsafe {
-            ffi::AMPL_InstanceGetDoubleSuffix((*self.ampl).raw, name.as_ptr(), self.tuple.raw, suffix_c.into(), &mut value as *mut f64);
-        }
+        let err = unsafe {
+            ffi::AMPL_InstanceGetDoubleSuffix((*self.ampl).raw, name.as_ptr(), self.tuple.raw, suffix_c.into(), &mut value as *mut f64)
+        };
+        unsafe { check_ampl_error(err) };
         value
     }
 
@@ -81,9 +83,10 @@ impl Variableinstance {
         let name = CString::new(&*self.name).unwrap();
         let suffix_c = Numericsuffix::from(suffix);
         let mut value: i32 = 0;
-        unsafe {
-            ffi::AMPL_InstanceGetIntSuffix((*self.ampl).raw, name.as_ptr(), self.tuple.raw, suffix_c.into(), &mut value as *mut i32);
-        }
+        let err = unsafe {
+            ffi::AMPL_InstanceGetIntSuffix((*self.ampl).raw, name.as_ptr(), self.tuple.raw, suffix_c.into(), &mut value as *mut i32)
+        };
+        unsafe { check_ampl_error(err) };
         value
     }
 
@@ -93,7 +96,8 @@ impl Variableinstance {
         let suffix_c = Stringsuffix::from(suffix);
         let mut value_ptr: *mut c_char = ptr::null_mut();
         unsafe {
-            ffi::AMPL_InstanceGetStringSuffix((*self.ampl).raw, name.as_ptr(), self.tuple.raw, suffix_c.into(), &mut value_ptr);
+            let err = ffi::AMPL_InstanceGetStringSuffix((*self.ampl).raw, name.as_ptr(), self.tuple.raw, suffix_c.into(), &mut value_ptr);
+            check_ampl_error(err);
             if value_ptr.is_null() {
                 return String::new();
             }
@@ -106,32 +110,28 @@ impl Variableinstance {
     /// Fix this variable instance at its current value.
     pub fn fix(&self) {
         let name = CString::new(&*self.name).unwrap();
-        unsafe {
-            ffi::AMPL_VariableInstanceFix((*self.ampl).raw, name.as_ptr(), self.tuple.raw);
-        }
+        let err = unsafe { ffi::AMPL_VariableInstanceFix((*self.ampl).raw, name.as_ptr(), self.tuple.raw) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Fix this variable instance at the specified `value`.
     pub fn fix_to_value(&self, value: f64) {
         let name = CString::new(&*self.name).unwrap();
-        unsafe {
-            ffi::AMPL_VariableInstanceFixToValue((*self.ampl).raw, name.as_ptr(), self.tuple.raw, value);
-        }
+        let err = unsafe { ffi::AMPL_VariableInstanceFixToValue((*self.ampl).raw, name.as_ptr(), self.tuple.raw, value) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Unfix this variable instance so it can be optimised again.
     pub fn unfix(&self) {
         let name = CString::new(&*self.name).unwrap();
-        unsafe {
-            ffi::AMPL_VariableInstanceUnfix((*self.ampl).raw, name.as_ptr(), self.tuple.raw);
-        }
+        let err = unsafe { ffi::AMPL_VariableInstanceUnfix((*self.ampl).raw, name.as_ptr(), self.tuple.raw) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Set the value of this variable instance.
     pub fn set_value(&self, value: f64) {
         let name = CString::new(&*self.name).unwrap();
-        unsafe {
-            ffi::AMPL_VariableInstanceSetValue((*self.ampl).raw, name.as_ptr(), self.tuple.raw, value);
-        }
+        let err = unsafe { ffi::AMPL_VariableInstanceSetValue((*self.ampl).raw, name.as_ptr(), self.tuple.raw, value) };
+        unsafe { check_ampl_error(err) };
     }
 }

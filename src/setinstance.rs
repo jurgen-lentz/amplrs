@@ -1,3 +1,4 @@
+use crate::error::check_ampl_error;
 use crate::ffi;
 use crate::ampl::Ampl;
 use crate::suffix::{Numericsuffix, Stringsuffix};
@@ -24,7 +25,8 @@ impl Setinstance {
         let name = CString::new(&*self.name).unwrap();
         let mut value_ptr: *mut c_char = ptr::null_mut();
         unsafe {
-            ffi::AMPL_InstanceGetName((*self.ampl).raw, name.as_ptr(), self.tuple.raw, &mut value_ptr);
+            let err = ffi::AMPL_InstanceGetName((*self.ampl).raw, name.as_ptr(), self.tuple.raw, &mut value_ptr);
+            check_ampl_error(err);
             if value_ptr.is_null() {
                 return String::new();
             }
@@ -39,7 +41,8 @@ impl Setinstance {
         let name = CString::new(&*self.name).unwrap();
         let mut value_ptr: *mut c_char = ptr::null_mut();
         unsafe {
-            ffi::AMPL_SetInstanceToString((*self.ampl).raw, name.as_ptr(), self.tuple.raw, &mut value_ptr);
+            let err = ffi::AMPL_SetInstanceToString((*self.ampl).raw, name.as_ptr(), self.tuple.raw, &mut value_ptr);
+            check_ampl_error(err);
             if value_ptr.is_null() {
                 return String::new();
             }
@@ -52,17 +55,15 @@ impl Setinstance {
     /// Drop this set instance from the active model.
     pub fn drop(&self) {
         let name = CString::new(&*self.name).unwrap();
-        unsafe {
-            ffi::AMPL_InstanceDrop((*self.ampl).raw, name.as_ptr(), self.tuple.raw);
-        }
+        let err = unsafe { ffi::AMPL_InstanceDrop((*self.ampl).raw, name.as_ptr(), self.tuple.raw) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Restore a previously dropped set instance.
     pub fn restore(&self) {
         let name = CString::new(&*self.name).unwrap();
-        unsafe {
-            ffi::AMPL_InstanceRestore((*self.ampl).raw, name.as_ptr(), self.tuple.raw);
-        }
+        let err = unsafe { ffi::AMPL_InstanceRestore((*self.ampl).raw, name.as_ptr(), self.tuple.raw) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Return the value of a numeric suffix for this set instance.
@@ -70,9 +71,10 @@ impl Setinstance {
         let name = CString::new(&*self.name).unwrap();
         let suffix_c = Numericsuffix::from(suffix);
         let mut value: f64 = 0.0;
-        unsafe {
-            ffi::AMPL_InstanceGetDoubleSuffix((*self.ampl).raw, name.as_ptr(), self.tuple.raw, suffix_c.into(), &mut value as *mut f64);
-        }
+        let err = unsafe {
+            ffi::AMPL_InstanceGetDoubleSuffix((*self.ampl).raw, name.as_ptr(), self.tuple.raw, suffix_c.into(), &mut value as *mut f64)
+        };
+        unsafe { check_ampl_error(err) };
         value
     }
 
@@ -81,9 +83,10 @@ impl Setinstance {
         let name = CString::new(&*self.name).unwrap();
         let suffix_c = Numericsuffix::from(suffix);
         let mut value: i32 = 0;
-        unsafe {
-            ffi::AMPL_InstanceGetIntSuffix((*self.ampl).raw, name.as_ptr(), self.tuple.raw, suffix_c.into(), &mut value as *mut i32);
-        }
+        let err = unsafe {
+            ffi::AMPL_InstanceGetIntSuffix((*self.ampl).raw, name.as_ptr(), self.tuple.raw, suffix_c.into(), &mut value as *mut i32)
+        };
+        unsafe { check_ampl_error(err) };
         value
     }
 
@@ -93,7 +96,8 @@ impl Setinstance {
         let suffix_c = Stringsuffix::from(suffix);
         let mut value_ptr: *mut c_char = ptr::null_mut();
         unsafe {
-            ffi::AMPL_InstanceGetStringSuffix((*self.ampl).raw, name.as_ptr(), self.tuple.raw, suffix_c.into(), &mut value_ptr);
+            let err = ffi::AMPL_InstanceGetStringSuffix((*self.ampl).raw, name.as_ptr(), self.tuple.raw, suffix_c.into(), &mut value_ptr);
+            check_ampl_error(err);
             if value_ptr.is_null() {
                 return String::new();
             }
@@ -107,9 +111,10 @@ impl Setinstance {
     pub fn size(&self) -> usize {
         let name = CString::new(&*self.name).unwrap();
         let mut size: usize = 0;
-        unsafe {
-            ffi::AMPL_SetInstanceGetSize((*self.ampl).raw, name.as_ptr(), self.tuple.raw, &mut size as *mut usize);
-        }
+        let err = unsafe {
+            ffi::AMPL_SetInstanceGetSize((*self.ampl).raw, name.as_ptr(), self.tuple.raw, &mut size as *mut usize)
+        };
+        unsafe { check_ampl_error(err) };
         size
     }
 
@@ -117,9 +122,10 @@ impl Setinstance {
     pub fn contains(&self, contained: Tuple) -> bool {
         let name = CString::new(&*self.name).unwrap();
         let mut contains: bool = false;
-        unsafe {
-            ffi::AMPL_SetInstanceContains((*self.ampl).raw, name.as_ptr(), self.tuple.raw, contained.raw, &mut contains as *mut bool);
-        }
+        let err = unsafe {
+            ffi::AMPL_SetInstanceContains((*self.ampl).raw, name.as_ptr(), self.tuple.raw, contained.raw, &mut contains as *mut bool)
+        };
+        unsafe { check_ampl_error(err) };
         contains
     }
 }

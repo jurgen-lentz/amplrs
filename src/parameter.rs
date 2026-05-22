@@ -1,3 +1,4 @@
+use crate::error::check_ampl_error;
 use crate::ffi;
 use crate::ampl::Ampl;
 
@@ -27,7 +28,8 @@ impl Parameter {
     pub fn indexarity(&self) -> usize {
         let name = CString::new(&*self.name).unwrap();
         let mut indexarity: usize = 0;
-        unsafe { ffi::AMPL_EntityGetIndexarity(self.raw, name.as_ptr(), &mut indexarity as *mut usize) };
+        let err = unsafe { ffi::AMPL_EntityGetIndexarity(self.raw, name.as_ptr(), &mut indexarity as *mut usize) };
+        unsafe { check_ampl_error(err) };
         indexarity
     }
 
@@ -35,7 +37,8 @@ impl Parameter {
     pub fn num_instances(&self) -> usize {
         let name = CString::new(&*self.name).unwrap();
         let mut num_instances: usize = 0;
-        unsafe { ffi::AMPL_EntityGetNumInstances(self.raw, name.as_ptr(), &mut num_instances as *mut usize) };
+        let err = unsafe { ffi::AMPL_EntityGetNumInstances(self.raw, name.as_ptr(), &mut num_instances as *mut usize) };
+        unsafe { check_ampl_error(err) };
         num_instances
     }
 
@@ -44,7 +47,8 @@ impl Parameter {
         let name = CString::new(&*self.name).unwrap();
         let mut value_ptr: *mut c_char = ptr::null_mut();
         unsafe {
-            ffi::AMPL_EntityGetDeclaration(self.raw, name.as_ptr(), &mut value_ptr);
+            let err = ffi::AMPL_EntityGetDeclaration(self.raw, name.as_ptr(), &mut value_ptr);
+            check_ampl_error(err);
             if value_ptr.is_null() {
                 return String::new();
             }
@@ -59,9 +63,10 @@ impl Parameter {
     /// The length of `values` must equal the number of instances.
     pub fn set_all_double_values(&self, values: &[f64]) {
         let name = CString::new(&*self.name).unwrap();
-        unsafe {
-            ffi::AMPL_ParameterSetArgsDoubleValues(self.raw, name.as_ptr(), values.len(), values.as_ptr());
-        }
+        let err = unsafe {
+            ffi::AMPL_ParameterSetArgsDoubleValues(self.raw, name.as_ptr(), values.len(), values.as_ptr())
+        };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Assign `values` to the specific instances identified by the string `indices`.
@@ -82,13 +87,14 @@ impl Parameter {
 
         let mut vals = values.to_vec();
         unsafe {
-            ffi::AMPL_ParameterSetSomeDoubleValues(
+            let err = ffi::AMPL_ParameterSetSomeDoubleValues(
                 self.raw,
                 name.as_ptr(),
                 tuples.len(),
                 tuples.as_mut_ptr(),
                 vals.as_mut_ptr(),
             );
+            check_ampl_error(err);
             for t in &mut tuples {
                 ffi::AMPL_TupleFree(t);
             }
@@ -98,12 +104,14 @@ impl Parameter {
     /// Drop this parameter from the current model.
     pub fn drop(&self) {
         let name = CString::new(&*self.name).unwrap();
-        unsafe { ffi::AMPL_EntityDrop(self.raw, name.as_ptr()) };
+        let err = unsafe { ffi::AMPL_EntityDrop(self.raw, name.as_ptr()) };
+        unsafe { check_ampl_error(err) };
     }
 
     /// Restore a previously dropped parameter.
     pub fn restore(&self) {
         let name = CString::new(&*self.name).unwrap();
-        unsafe { ffi::AMPL_EntityRestore(self.raw, name.as_ptr()) };
+        let err = unsafe { ffi::AMPL_EntityRestore(self.raw, name.as_ptr()) };
+        unsafe { check_ampl_error(err) };
     }
 }
