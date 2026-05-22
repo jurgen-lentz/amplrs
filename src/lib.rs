@@ -6,6 +6,9 @@ pub use tuple::*;
 pub mod ampl;
 pub use ampl::*;
 
+pub mod dataframe;
+pub use dataframe::*;
+
 pub mod constraint;
 pub use constraint::*;
 pub mod constraintinstance;

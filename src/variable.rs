@@ -1,5 +1,6 @@
 use crate::ffi;
 use crate::ampl::Ampl;
+use crate::dataframe::DataFrame;
 use crate::variableinstance::Variableinstance;
 use crate::tuple::Tuple;
 
@@ -87,6 +88,16 @@ impl Variable {
             ffi::AMPL_StringFree(&mut value_ptr);
             value_str
         }
+    }
+
+    /// Retrieve all values of this variable as a DataFrame.
+    pub fn get_values(&self) -> DataFrame {
+        let name = CString::new(&*self.name).unwrap();
+        let mut df: *mut ffi::AMPL_DATAFRAME = ptr::null_mut();
+        unsafe {
+            ffi::AMPL_EntityGetValues((*self.ampl).raw, name.as_ptr(), ptr::null(), 0, &mut df);
+        }
+        DataFrame { raw: df }
     }
 
     pub fn drop(&self) {

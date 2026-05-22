@@ -47,6 +47,43 @@ impl Parameter {
         }
     }
 
+    /// Assign all values by position (must match the number of instances in the parameter).
+    pub fn set_all_double_values(&self, values: &[f64]) {
+        let name = CString::new(&*self.name).unwrap();
+        unsafe {
+            ffi::AMPL_ParameterSetArgsDoubleValues(self.raw, name.as_ptr(), values.len(), values.as_ptr());
+        }
+    }
+
+    /// Assign values to specific instances identified by string indices.
+    pub fn set_some_double_values(&self, indices: &[&str], values: &[f64]) {
+        assert_eq!(indices.len(), values.len());
+        let name = CString::new(&*self.name).unwrap();
+
+        let mut tuples: Vec<*mut ffi::AMPL_TUPLE> = indices.iter().map(|&s| {
+            let cs = CString::new(s).unwrap();
+            let p = cs.as_ptr();
+            let mut tuple: *mut ffi::AMPL_TUPLE = ptr::null_mut();
+            unsafe { ffi::AMPL_TupleCreateString(&mut tuple, 1, &p) };
+            std::mem::forget(cs);
+            tuple
+        }).collect();
+
+        let mut vals = values.to_vec();
+        unsafe {
+            ffi::AMPL_ParameterSetSomeDoubleValues(
+                self.raw,
+                name.as_ptr(),
+                tuples.len(),
+                tuples.as_mut_ptr(),
+                vals.as_mut_ptr(),
+            );
+            for t in &mut tuples {
+                ffi::AMPL_TupleFree(t);
+            }
+        }
+    }
+
     pub fn drop(&self) {
         let name = CString::new(&*self.name).unwrap();
         unsafe { ffi::AMPL_EntityDrop(self.raw, name.as_ptr()) };

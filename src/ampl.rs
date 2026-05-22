@@ -1,5 +1,6 @@
 use crate::ffi;
 use crate::constraint::Constraint;
+use crate::dataframe::DataFrame;
 use crate::objective::Objective;
 use crate::parameter::Parameter;
 use crate::set::Set;
@@ -255,6 +256,10 @@ impl Ampl {
         objectives
     }
 
+    pub fn get_parameter(&mut self, name: &str) -> Parameter {
+        Parameter::new(self, name.to_string())
+    }
+
     pub fn get_parameters(&mut self) -> Vec<Parameter> {
         let mut size: usize = 0;
         let mut names: *mut *mut c_char = ptr::null_mut();
@@ -297,6 +302,25 @@ impl Ampl {
             libc::free(names as *mut libc::c_void);
         }
         sets
+    }
+
+    /// Assign data from a DataFrame to AMPL entities.
+    /// If `set_name` is `Some("S")`, the index column(s) are also assigned to set `S`.
+    pub fn set_data(&mut self, df: &DataFrame, set_name: Option<&str>) {
+        let set_name_c = set_name.map(|s| CString::new(s).unwrap());
+        let set_name_ptr = set_name_c.as_ref().map(|s| s.as_ptr()).unwrap_or(ptr::null());
+        unsafe { ffi::AMPL_SetData(self.raw, df.raw, set_name_ptr) };
+    }
+
+    /// Retrieve data from AMPL for the given display statements, returned as a DataFrame.
+    pub fn get_data(&mut self, statements: &[&str]) -> DataFrame {
+        let cstrings: Vec<CString> = statements.iter()
+            .map(|&s| CString::new(s).unwrap())
+            .collect();
+        let ptrs: Vec<*const libc::c_char> = cstrings.iter().map(|s| s.as_ptr()).collect();
+        let mut df: *mut ffi::AMPL_DATAFRAME = ptr::null_mut();
+        unsafe { ffi::AMPL_GetData(self.raw, ptrs.as_ptr(), statements.len(), &mut df) };
+        DataFrame { raw: df }
     }
 
     pub fn get_variable(&mut self, name: &str) -> Variable {
