@@ -265,21 +265,16 @@ impl DataFrame {
     /// Fill a 2-index / 1-data-column DataFrame from row indices, column indices, and a flat
     /// row-major matrix of `row_indices.len() × col_indices.len()` values.
     pub fn set_matrix(&self, row_indices: &[&str], col_indices: &[&str], values: &[f64]) {
-        let row_cs: Vec<CString> = row_indices.iter().map(|&s| CString::new(s).unwrap()).collect();
-        let row_ptrs: Vec<*const c_char> = row_cs.iter().map(|s| s.as_ptr()).collect();
-        let col_cs: Vec<CString> = col_indices.iter().map(|&s| CString::new(s).unwrap()).collect();
-        let col_ptrs: Vec<*const c_char> = col_cs.iter().map(|s| s.as_ptr()).collect();
-        let err = unsafe {
-            ffi::AMPL_DataFrameSetMatrixStringString(
-                self.raw,
-                values.as_ptr(),
-                row_indices.len(),
-                row_ptrs.as_ptr(),
-                col_indices.len(),
-                col_ptrs.as_ptr(),
-            )
-        };
-        unsafe { check_ampl_error(err) };
+        self.reserve(row_indices.len() * col_indices.len());
+        for (i, &row) in row_indices.iter().enumerate() {
+            for (j, &col) in col_indices.iter().enumerate() {
+                self.add_row(&[
+                    Value::Text(row.to_string()),
+                    Value::Text(col.to_string()),
+                    Value::Numeric(values[i * col_indices.len() + j]),
+                ]);
+            }
+        }
     }
 
     /// Return a human-readable tabular string representation of the DataFrame.
