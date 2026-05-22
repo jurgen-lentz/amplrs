@@ -265,16 +265,19 @@ impl DataFrame {
     /// Fill a 2-index / 1-data-column DataFrame from row indices, column indices, and a flat
     /// row-major matrix of `row_indices.len() × col_indices.len()` values.
     pub fn set_matrix(&self, row_indices: &[&str], col_indices: &[&str], values: &[f64]) {
-        self.reserve(row_indices.len() * col_indices.len());
-        for (i, &row) in row_indices.iter().enumerate() {
-            for (j, &col) in col_indices.iter().enumerate() {
-                self.add_row(&[
-                    Value::Text(row.to_string()),
-                    Value::Text(col.to_string()),
-                    Value::Numeric(values[i * col_indices.len() + j]),
-                ]);
+        let n = row_indices.len() * col_indices.len();
+        let mut flat_row: Vec<&str> = Vec::with_capacity(n);
+        let mut flat_col: Vec<&str> = Vec::with_capacity(n);
+        for &row in row_indices {
+            for &col in col_indices {
+                flat_row.push(row);
+                flat_col.push(col);
             }
         }
+        let hdrs = self.headers();
+        self.set_column_strings(&hdrs[0], &flat_row);
+        self.set_column_strings(&hdrs[1], &flat_col);
+        self.set_column_doubles(&hdrs[2], values);
     }
 
     /// Return a human-readable tabular string representation of the DataFrame.
