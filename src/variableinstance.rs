@@ -7,6 +7,7 @@ use libc::c_char;
 use std::ffi::{CStr, CString};
 use std::ptr;
 
+/// A single instance of an AMPL variable, identified by its indexing tuple.
 pub struct Variableinstance {
     pub(crate) ampl: *mut Ampl,
     pub(crate) name: String,
@@ -18,6 +19,7 @@ impl Variableinstance {
         Variableinstance { ampl: ampl, name: name, tuple: tuple }
     }
 
+    /// Return the fully-qualified AMPL name of this instance (e.g. `"Buy['BEEF']"`).
     pub fn name(&self) -> String {
         let name = CString::new(&*self.name).unwrap();
         let mut value_ptr: *mut c_char = ptr::null_mut();
@@ -32,6 +34,7 @@ impl Variableinstance {
         }
     }
 
+    /// Return a human-readable string representation of this variable instance.
     pub fn to_string(&self) -> String {
         let name = CString::new(&*self.name).unwrap();
         let mut value_ptr: *mut c_char = ptr::null_mut();
@@ -46,6 +49,7 @@ impl Variableinstance {
         }
     }
 
+    /// Drop this variable instance from the active model.
     pub fn drop(&self) {
         let name = CString::new(&*self.name).unwrap();
         unsafe {
@@ -53,6 +57,7 @@ impl Variableinstance {
         }
     }
 
+    /// Restore a previously dropped variable instance.
     pub fn restore(&self) {
         let name = CString::new(&*self.name).unwrap();
         unsafe {
@@ -60,6 +65,7 @@ impl Variableinstance {
         }
     }
 
+    /// Return the value of a numeric suffix for this variable instance.
     pub fn dbl_suffix(&self, suffix: Numericsuffix) -> f64 {
         let name = CString::new(&*self.name).unwrap();
         let suffix_c = Numericsuffix::from(suffix);
@@ -70,6 +76,7 @@ impl Variableinstance {
         value
     }
 
+    /// Return the value of an integer numeric suffix for this variable instance.
     pub fn int_suffix(&self, suffix: Numericsuffix) -> i32 {
         let name = CString::new(&*self.name).unwrap();
         let suffix_c = Numericsuffix::from(suffix);
@@ -80,6 +87,7 @@ impl Variableinstance {
         value
     }
 
+    /// Return the value of a string suffix for this variable instance.
     pub fn string_suffix(&self, suffix: Stringsuffix) -> String {
         let name = CString::new(&*self.name).unwrap();
         let suffix_c = Stringsuffix::from(suffix);
@@ -95,8 +103,7 @@ impl Variableinstance {
         }
     }
 
-
-
+    /// Fix this variable instance at its current value.
     pub fn fix(&self) {
         let name = CString::new(&*self.name).unwrap();
         unsafe {
@@ -104,6 +111,7 @@ impl Variableinstance {
         }
     }
 
+    /// Fix this variable instance at the specified `value`.
     pub fn fix_to_value(&self, value: f64) {
         let name = CString::new(&*self.name).unwrap();
         unsafe {
@@ -111,6 +119,7 @@ impl Variableinstance {
         }
     }
 
+    /// Unfix this variable instance so it can be optimised again.
     pub fn unfix(&self) {
         let name = CString::new(&*self.name).unwrap();
         unsafe {
@@ -118,6 +127,7 @@ impl Variableinstance {
         }
     }
 
+    /// Set the value of this variable instance.
     pub fn set_value(&self, value: f64) {
         let name = CString::new(&*self.name).unwrap();
         unsafe {

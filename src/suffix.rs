@@ -1,51 +1,92 @@
 use crate::ffi;
 
+/// Numeric suffixes that AMPL attaches to variables, constraints, and objectives.
+///
+/// Use these with the `dbl_suffix` / `int_suffix` methods on instance types.
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub enum Numericsuffix {
+    /// Current value (`.val`).
     Value,
+    /// Defining equation index (`.defeqn`).
     Defeqn,
+    /// Dual / shadow price (`.dual`).
     Dual,
+    /// Initial value (`.init`).
     Init,
+    /// Original initial value before presolve (`.init0`).
     Init0,
+    /// Lower bound (`.lb`).
     Lb,
+    /// Upper bound (`.ub`).
     Ub,
+    /// Original lower bound before presolve (`.lb0`).
     Lb0,
+    /// Original upper bound before presolve (`.ub0`).
     Ub0,
+    /// Computed lower bound (`.lb1`).
     Lb1,
+    /// Computed upper bound (`.ub1`).
     Ub1,
+    /// Relaxed lower bound (`.lb2`).
     Lb2,
+    /// Relaxed upper bound (`.ub2`).
     Ub2,
+    /// Left reduced cost (`.lrc`).
     Lrc,
+    /// Right reduced cost (`.urc`).
     Urc,
+    /// Left slack (`.lslack`).
     Lslack,
+    /// Right slack (`.uslack`).
     Uslack,
+    /// Reduced cost (`.rc`).
     Rc,
+    /// Slack (`.slack`).
     Slack,
-    // CONSTRAINTS
+    // Constraint-specific suffixes
+    /// Body value of a constraint (`.body`).
     Body,
+    /// Defining variable index (`.defvar`).
     Defvar,
+    /// Dual initial value (`.dinit`).
     Dinit,
+    /// Original dual initial value (`.dinit0`).
     Dinit0,
+    /// Single-sided lower bound of a constraint (`.lbs`).
     Lbs,
+    /// Single-sided upper bound of a constraint (`.ubs`).
     Ubs,
+    /// Lower dual value (`.ldual`).
     Ldual,
+    /// Upper dual value (`.udual`).
     Udual,
-    Val,  // for logical constraints
-    // OBJECTIVES
+    /// Logical constraint value (`.val`).
+    Val,
+    // Objective-specific suffixes
+    /// Solver exit code (`.exitcode`).
     Exitcode,
-    /// Any status code not specifically represented in this enum.
+    /// Any numeric suffix not explicitly listed above.
     Unknown(ffi::AMPL_NUMERICSUFFIX),
 }
 
+/// String suffixes that AMPL attaches to variables, constraints, and objectives.
+///
+/// Use these with the `string_suffix` method on instance types.
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub enum Stringsuffix {
+    /// Algebraic status (`.astatus`).
     Astatus,
-    Sstatus, 
+    /// Solver status (`.sstatus`).
+    Sstatus,
+    /// Combined status (`.status`).
     Status,
+    /// Solver message (`.message`).
     Message,
+    /// Solve result string (`.result`).
     Result,
+    /// Objective sense: `"minimize"` or `"maximize"` (`.sense`).
     Sense,
-    /// Any status code not specifically represented in this enum.
+    /// Any string suffix not explicitly listed above.
     Unknown(ffi::AMPL_STRINGSUFFIX),
 }
 
@@ -90,7 +131,6 @@ pub enum Stringsuffix {
 //}
 
 impl From<Numericsuffix> for ffi::AMPL_NUMERICSUFFIX {
-    /// Converts a `Numericsuffix` enum variant to an `AMPL_NUMERICSUFFIX` value.
     fn from(value: Numericsuffix) -> Self {
         match value {
             Numericsuffix::Value => ffi::AMPL_NUMERICSUFFIX_AMPL_VALUE,
@@ -112,7 +152,6 @@ impl From<Numericsuffix> for ffi::AMPL_NUMERICSUFFIX {
             Numericsuffix::Uslack => ffi::AMPL_NUMERICSUFFIX_AMPL_USLACK,
             Numericsuffix::Rc => ffi::AMPL_NUMERICSUFFIX_AMPL_RC,
             Numericsuffix::Slack => ffi::AMPL_NUMERICSUFFIX_AMPL_SLACK,
-            // CONSTRAINTS
             Numericsuffix::Body => ffi::AMPL_NUMERICSUFFIX_AMPL_BODY,
             Numericsuffix::Defvar => ffi::AMPL_NUMERICSUFFIX_AMPL_DEFVAR,
             Numericsuffix::Dinit => ffi::AMPL_NUMERICSUFFIX_AMPL_DINIT,
@@ -121,8 +160,7 @@ impl From<Numericsuffix> for ffi::AMPL_NUMERICSUFFIX {
             Numericsuffix::Ubs => ffi::AMPL_NUMERICSUFFIX_AMPL_UBS,
             Numericsuffix::Ldual => ffi::AMPL_NUMERICSUFFIX_AMPL_LDUAL,
             Numericsuffix::Udual => ffi::AMPL_NUMERICSUFFIX_AMPL_UDUAL,
-            Numericsuffix::Val => ffi::AMPL_NUMERICSUFFIX_AMPL_VAL,  // for logical constraints
-            // OBJECTIVES
+            Numericsuffix::Val => ffi::AMPL_NUMERICSUFFIX_AMPL_VAL,
             Numericsuffix::Exitcode => ffi::AMPL_NUMERICSUFFIX_AMPL_EXITCODE,
             Numericsuffix::Unknown(val) => val,
         }
@@ -130,7 +168,6 @@ impl From<Numericsuffix> for ffi::AMPL_NUMERICSUFFIX {
 }
 
 impl From<Stringsuffix> for ffi::AMPL_STRINGSUFFIX {
-    /// Converts a `Stringsuffix` enum variant to an `AMPL_STRINGSUFFIX` value.
     fn from(value: Stringsuffix) -> Self {
         match value {
             Stringsuffix::Astatus => ffi::AMPL_STRINGSUFFIX_AMPL_ASTATUS,

@@ -5,6 +5,9 @@ use libc::c_char;
 use std::ffi::{CStr, CString};
 use std::ptr;
 
+/// An AMPL parameter entity.
+///
+/// Obtained via [`Ampl::get_parameter`] or [`Ampl::get_parameters`].
 pub struct Parameter {
     raw: *mut ffi::AMPL,
     name: String,
@@ -15,10 +18,12 @@ impl Parameter {
         Parameter { raw: ampl.raw, name:name }
     }
 
+    /// Print the parameter name to stdout.
     pub fn print(&self) {
         println!("Parameter: {}", self.name);
     }
 
+    /// Return the indexarity (number of indices) of this parameter.
     pub fn indexarity(&self) -> usize {
         let name = CString::new(&*self.name).unwrap();
         let mut indexarity: usize = 0;
@@ -26,6 +31,7 @@ impl Parameter {
         indexarity
     }
 
+    /// Return the total number of instances of this parameter.
     pub fn num_instances(&self) -> usize {
         let name = CString::new(&*self.name).unwrap();
         let mut num_instances: usize = 0;
@@ -33,6 +39,7 @@ impl Parameter {
         num_instances
     }
 
+    /// Return the AMPL declaration string for this parameter.
     pub fn declaration(&mut self) -> String {
         let name = CString::new(&*self.name).unwrap();
         let mut value_ptr: *mut c_char = ptr::null_mut();
@@ -47,7 +54,9 @@ impl Parameter {
         }
     }
 
-    /// Assign all values by position (must match the number of instances in the parameter).
+    /// Assign `values` to all instances of this parameter in the order they appear in the model.
+    ///
+    /// The length of `values` must equal the number of instances.
     pub fn set_all_double_values(&self, values: &[f64]) {
         let name = CString::new(&*self.name).unwrap();
         unsafe {
@@ -55,7 +64,9 @@ impl Parameter {
         }
     }
 
-    /// Assign values to specific instances identified by string indices.
+    /// Assign `values` to the specific instances identified by the string `indices`.
+    ///
+    /// Both slices must have the same length. Each index is treated as a 1-element string tuple.
     pub fn set_some_double_values(&self, indices: &[&str], values: &[f64]) {
         assert_eq!(indices.len(), values.len());
         let name = CString::new(&*self.name).unwrap();
@@ -84,11 +95,13 @@ impl Parameter {
         }
     }
 
+    /// Drop this parameter from the current model.
     pub fn drop(&self) {
         let name = CString::new(&*self.name).unwrap();
         unsafe { ffi::AMPL_EntityDrop(self.raw, name.as_ptr()) };
     }
 
+    /// Restore a previously dropped parameter.
     pub fn restore(&self) {
         let name = CString::new(&*self.name).unwrap();
         unsafe { ffi::AMPL_EntityRestore(self.raw, name.as_ptr()) };

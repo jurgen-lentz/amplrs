@@ -7,6 +7,7 @@ use libc::c_char;
 use std::ffi::{CStr, CString};
 use std::ptr;
 
+/// A single instance of an AMPL set, identified by its indexing tuple.
 pub struct Setinstance {
     pub(crate) ampl: *mut Ampl,
     pub(crate) name: String,
@@ -18,6 +19,7 @@ impl Setinstance {
         Setinstance { ampl: ampl, name: name, tuple: tuple }
     }
 
+    /// Return the fully-qualified AMPL name of this instance.
     pub fn name(&self) -> String {
         let name = CString::new(&*self.name).unwrap();
         let mut value_ptr: *mut c_char = ptr::null_mut();
@@ -32,6 +34,7 @@ impl Setinstance {
         }
     }
 
+    /// Return a human-readable string representation of this set instance.
     pub fn to_string(&self) -> String {
         let name = CString::new(&*self.name).unwrap();
         let mut value_ptr: *mut c_char = ptr::null_mut();
@@ -46,6 +49,7 @@ impl Setinstance {
         }
     }
 
+    /// Drop this set instance from the active model.
     pub fn drop(&self) {
         let name = CString::new(&*self.name).unwrap();
         unsafe {
@@ -53,6 +57,7 @@ impl Setinstance {
         }
     }
 
+    /// Restore a previously dropped set instance.
     pub fn restore(&self) {
         let name = CString::new(&*self.name).unwrap();
         unsafe {
@@ -60,6 +65,7 @@ impl Setinstance {
         }
     }
 
+    /// Return the value of a numeric suffix for this set instance.
     pub fn dbl_suffix(&self, suffix: Numericsuffix) -> f64 {
         let name = CString::new(&*self.name).unwrap();
         let suffix_c = Numericsuffix::from(suffix);
@@ -70,6 +76,7 @@ impl Setinstance {
         value
     }
 
+    /// Return the value of an integer numeric suffix for this set instance.
     pub fn int_suffix(&self, suffix: Numericsuffix) -> i32 {
         let name = CString::new(&*self.name).unwrap();
         let suffix_c = Numericsuffix::from(suffix);
@@ -80,6 +87,7 @@ impl Setinstance {
         value
     }
 
+    /// Return the value of a string suffix for this set instance.
     pub fn string_suffix(&self, suffix: Stringsuffix) -> String {
         let name = CString::new(&*self.name).unwrap();
         let suffix_c = Stringsuffix::from(suffix);
@@ -95,7 +103,7 @@ impl Setinstance {
         }
     }
 
-
+    /// Return the number of elements in this set instance.
     pub fn size(&self) -> usize {
         let name = CString::new(&*self.name).unwrap();
         let mut size: usize = 0;
@@ -105,6 +113,7 @@ impl Setinstance {
         size
     }
 
+    /// Return `true` if the set instance contains the element described by `contained`.
     pub fn contains(&self, contained: Tuple) -> bool {
         let name = CString::new(&*self.name).unwrap();
         let mut contains: bool = false;

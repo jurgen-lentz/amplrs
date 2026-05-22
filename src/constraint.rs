@@ -5,6 +5,9 @@ use libc::c_char;
 use std::ffi::{CStr, CString};
 use std::ptr;
 
+/// An AMPL constraint entity.
+///
+/// Obtained via [`Ampl::get_constraint`] or [`Ampl::get_constraints`].
 pub struct Constraint {
     raw: *mut ffi::AMPL,
     name: String,
@@ -15,15 +18,18 @@ impl Constraint {
         Constraint { raw: ampl.raw, name : name }
     }
 
+    /// Print the constraint name to stdout.
     pub fn print(&self) {
         println!("Constraint: {}", self.name);
     }
 
+    /// Set the dual value for a scalar constraint instance.
     pub fn set_dual(&self, dual: f64) {
         let name = CString::new(&*self.name).unwrap();
         unsafe { ffi::AMPL_ConstraintSetDual(self.raw, name.as_ptr(), dual) };
     }
 
+    /// Return the indexarity (number of indices) of this constraint.
     pub fn indexarity(&self) -> usize {
         let name = CString::new(&*self.name).unwrap();
         let mut indexarity: usize = 0;
@@ -31,6 +37,7 @@ impl Constraint {
         indexarity
     }
 
+    /// Return the total number of instances (rows) of this constraint.
     pub fn num_instances(&self) -> usize {
         let name = CString::new(&*self.name).unwrap();
         let mut num_instances: usize = 0;
@@ -38,6 +45,7 @@ impl Constraint {
         num_instances
     }
 
+    /// Return the AMPL declaration string for this constraint.
     pub fn declaration(&mut self) -> String {
         let name = CString::new(&*self.name).unwrap();
         let mut value_ptr: *mut c_char = ptr::null_mut();
@@ -52,11 +60,13 @@ impl Constraint {
         }
     }
 
+    /// Drop this constraint from the current model (equivalent to AMPL `drop` command).
     pub fn drop(&self) {
         let name = CString::new(&*self.name).unwrap();
         unsafe { ffi::AMPL_EntityDrop(self.raw, name.as_ptr()) };
     }
 
+    /// Restore a previously dropped constraint (equivalent to AMPL `restore` command).
     pub fn restore(&self) {
         let name = CString::new(&*self.name).unwrap();
         unsafe { ffi::AMPL_EntityRestore(self.raw, name.as_ptr()) };

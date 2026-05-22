@@ -7,6 +7,7 @@ use libc::c_char;
 use std::ffi::{CStr, CString};
 use std::ptr;
 
+/// A single instance of an AMPL constraint, identified by its indexing tuple.
 pub struct Constraintinstance {
     pub(crate) ampl: *mut Ampl,
     pub(crate) name: String,
@@ -18,6 +19,7 @@ impl Constraintinstance {
         Constraintinstance { ampl: ampl, name: name, tuple: tuple }
     }
 
+    /// Return the fully-qualified AMPL name of this instance (e.g. `"c['a']"`).
     pub fn name(&self) -> String {
         let name = CString::new(&*self.name).unwrap();
         let mut value_ptr: *mut c_char = ptr::null_mut();
@@ -32,6 +34,7 @@ impl Constraintinstance {
         }
     }
 
+    /// Return a human-readable string representation of this constraint instance.
     pub fn to_string(&self) -> String {
         let name = CString::new(&*self.name).unwrap();
         let mut value_ptr: *mut c_char = ptr::null_mut();
@@ -46,6 +49,7 @@ impl Constraintinstance {
         }
     }
 
+    /// Drop this constraint instance from the active model.
     pub fn drop(&self) {
         let name = CString::new(&*self.name).unwrap();
         unsafe {
@@ -53,6 +57,7 @@ impl Constraintinstance {
         }
     }
 
+    /// Restore a previously dropped constraint instance.
     pub fn restore(&self) {
         let name = CString::new(&*self.name).unwrap();
         unsafe {
@@ -60,6 +65,7 @@ impl Constraintinstance {
         }
     }
 
+    /// Return the value of a numeric suffix for this constraint instance.
     pub fn dbl_suffix(&self, suffix: Numericsuffix) -> f64 {
         let name = CString::new(&*self.name).unwrap();
         let suffix_c = Numericsuffix::from(suffix);
@@ -70,6 +76,7 @@ impl Constraintinstance {
         value
     }
 
+    /// Return the value of an integer numeric suffix for this constraint instance.
     pub fn int_suffix(&self, suffix: Numericsuffix) -> i32 {
         let name = CString::new(&*self.name).unwrap();
         let suffix_c = Numericsuffix::from(suffix);
@@ -80,6 +87,7 @@ impl Constraintinstance {
         value
     }
 
+    /// Return the value of a string suffix for this constraint instance.
     pub fn string_suffix(&self, suffix: Stringsuffix) -> String {
         let name = CString::new(&*self.name).unwrap();
         let suffix_c = Stringsuffix::from(suffix);
@@ -95,7 +103,7 @@ impl Constraintinstance {
         }
     }
 
-
+    /// Set the dual variable value for this constraint instance.
     pub fn set_dual(&self, value: f64) {
         let name = CString::new(&*self.name).unwrap();
         unsafe {

@@ -1,10 +1,10 @@
 [package]
 name = "amplrs"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "Safe Rust API for AMPL optimization modeling system"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/YOURNAME/amplrs"
+license = "MIT"
+repository = "https://github.com/jurgen-lentz/amplrs"
 readme = "README.md"
 keywords = ["ampl", "optimization", "ffi", "linear-programming"]
 categories = ["api-bindings"]

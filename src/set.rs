@@ -5,6 +5,9 @@ use libc::c_char;
 use std::ffi::{CStr, CString};
 use std::ptr;
 
+/// An AMPL set entity.
+///
+/// Obtained via [`Ampl::get_set`] or [`Ampl::get_sets`].
 pub struct Set {
     raw: *mut ffi::AMPL,
     name: String,
@@ -15,10 +18,12 @@ impl Set {
         Set { raw: ampl.raw, name:name }
     }
 
+    /// Print the set name to stdout.
     pub fn print(&self) {
         println!("Set: {}", self.name);
     }
 
+    /// Return the indexarity (number of indices) of this set.
     pub fn indexarity(&self) -> usize {
         let name = CString::new(&*self.name).unwrap();
         let mut indexarity: usize = 0;
@@ -26,6 +31,7 @@ impl Set {
         indexarity
     }
 
+    /// Return the total number of instances of this set.
     pub fn num_instances(&self) -> usize {
         let name = CString::new(&*self.name).unwrap();
         let mut num_instances: usize = 0;
@@ -33,6 +39,7 @@ impl Set {
         num_instances
     }
 
+    /// Return the AMPL declaration string for this set.
     pub fn declaration(&mut self) -> String {
         let name = CString::new(&*self.name).unwrap();
         let mut value_ptr: *mut c_char = ptr::null_mut();
@@ -47,11 +54,13 @@ impl Set {
         }
     }
 
+    /// Drop this set from the current model.
     pub fn drop(&self) {
         let name = CString::new(&*self.name).unwrap();
         unsafe { ffi::AMPL_EntityDrop(self.raw, name.as_ptr()) };
     }
 
+    /// Restore a previously dropped set.
     pub fn restore(&self) {
         let name = CString::new(&*self.name).unwrap();
         unsafe { ffi::AMPL_EntityRestore(self.raw, name.as_ptr()) };
