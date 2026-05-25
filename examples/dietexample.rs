@@ -1,5 +1,5 @@
 use amplrs::ampl::Ampl;
-use amplrs::dataframe::{DataFrame, Value};
+use amplrs::dataframe::DataFrame;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -54,16 +54,7 @@ fn main() {
     ];
 
     let df_amt = DataFrame::new(2, 1, &["NUTR", "FOOD", "amt"]);
-    df_amt.reserve(nutrients.len() * foods.len());
-    for (i, &nutr) in nutrients.iter().enumerate() {
-        for (j, &food) in foods.iter().enumerate() {
-            df_amt.add_row(&[
-                Value::Text(nutr.to_string()),
-                Value::Text(food.to_string()),
-                Value::Numeric(amounts[i * foods.len() + j]),
-            ]);
-        }
-    }
+    df_amt.set_matrix_doubles(&nutrients, &foods, amounts);
     ampl.set_data(&df_amt, None);
 
     ampl.solve("", "");
