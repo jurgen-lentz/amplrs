@@ -1,6 +1,6 @@
-pub use ampl_sys as ffi;
+pub mod ffi;
 
-pub(crate) mod error;
+pub mod error;
 
 pub mod tuple;
 pub use tuple::*;

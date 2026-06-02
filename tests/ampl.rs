@@ -48,8 +48,8 @@ fn export_model_to_file_test() {
 #[test]
 fn read_file_test() {
     let mut ampl = init();
-    ampl.read("../examples/models/diet/diet.mod");
-    ampl.read_data("../examples/models/diet/diet.dat");
+    ampl.read("../models/diet/diet.mod");
+    ampl.read_data("../models/diet/diet.dat");
     ampl.solve("", "");
     ampl.solve("", "");
     assert_near!(118.0, ampl.get_objective("Total_Cost").value(), 1.0);
@@ -58,8 +58,8 @@ fn read_file_test() {
 #[test]
 fn reset_test() {
     let mut ampl = init();
-    ampl.read("../examples/models/diet/diet.mod");
-    ampl.read_data("../examples/models/diet/diet.dat");
+    ampl.read("../models/diet/diet.mod");
+    ampl.read_data("../models/diet/diet.dat");
 
     ampl.solve("", "");
     ampl.solve("", "");
@@ -67,8 +67,8 @@ fn reset_test() {
 
     ampl.eval("reset;");
     ampl.reset();
-    ampl.read("../examples/models/diet/diet.mod");
-    ampl.read_data("../examples/models/diet/diet.dat");
+    ampl.read("../models/diet/diet.mod");
+    ampl.read_data("../models/diet/diet.dat");
     ampl.solve("", "");
     ampl.solve("", "");
     assert_near!(118.0, ampl.get_objective("Total_Cost").value(), 1.0);
@@ -80,8 +80,8 @@ fn reset_test() {
 #[test]
 fn solve_arguments_test() {
     let mut ampl = init();
-    ampl.read("../examples/models/diet/diet.mod");
-    ampl.read_data("../examples/models/diet/diet.dat");
+    ampl.read("../models/diet/diet.mod");
+    ampl.read_data("../models/diet/diet.dat");
 
     ampl.solve("", "");
     assert_near!(118.0, ampl.get_objective("Total_Cost").value(), 1.0);
@@ -98,8 +98,8 @@ fn solve_arguments_test() {
 #[test]
 fn snapshot_arguments_test() {
     let mut ampl = init();
-    ampl.read("../examples/models/diet/diet.mod");
-    ampl.read_data("../examples/models/diet/diet.dat");
+    ampl.read("../models/diet/diet.mod");
+    ampl.read_data("../models/diet/diet.dat");
     let snapshot_model = ampl.snapshot("", true, false, false);
     let export_model = ampl.export_model("");
     assert_eq!(snapshot_model, export_model);

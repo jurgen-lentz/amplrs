@@ -16,6 +16,7 @@ pub struct Setinstance {
 }
 
 impl Setinstance {
+    #[allow(dead_code)]
     pub(crate) fn new(ampl: &mut Ampl, name: String, tuple: Tuple) -> Self {
         Setinstance { ampl: ampl, name: name, tuple: tuple }
     }

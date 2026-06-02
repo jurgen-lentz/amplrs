@@ -12,20 +12,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "ampl-sys"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67f011cc32006d67bb32e5031bbf16aebba434e22192df60374a48c7bd0cbce7"
-dependencies = [
- "bindgen",
- "libc",
-]
-
-[[package]]
 name = "amplrs"
 version = "0.1.7"
 dependencies = [
- "ampl-sys",
+ "bindgen",
  "libc",
 ]
 

@@ -16,6 +16,7 @@ pub struct Objectiveinstance {
 }
 
 impl Objectiveinstance {
+    #[allow(dead_code)]
     pub(crate) fn new(ampl: &mut Ampl, name: String, tuple: Tuple) -> Self {
         Objectiveinstance { ampl: ampl, name: name, tuple: tuple }
     }

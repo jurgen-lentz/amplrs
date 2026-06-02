@@ -270,8 +270,8 @@ impl Ampl {
     ///
     /// If `set_name` is `Some("S")`, the index column values are also assigned to set `S`.
     pub fn set_data(&mut self, df: &DataFrame, set_name: Option<&str>) {
-        let set_name_c = set_name.map(|s| CString::new(s).unwrap());
-        let set_name_ptr = set_name_c.as_ref().map(|s| s.as_ptr()).unwrap_or(ptr::null());
+        let set_name_c = CString::new(set_name.unwrap_or("")).unwrap();
+        let set_name_ptr = set_name_c.as_ptr();
         let err = unsafe { ffi::AMPL_SetData(self.raw, df.raw, set_name_ptr) };
         unsafe { check_ampl_error(err) };
     }

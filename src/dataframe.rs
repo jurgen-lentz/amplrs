@@ -306,7 +306,7 @@ impl DataFrame {
             check_ampl_error(err);
             let mut type_: ffi::AMPL_TYPE = ffi::AMPL_TYPE_AMPL_NUMERIC;
             ffi::AMPL_VariantGetType(var, &mut type_);
-            let result = if type_ == ffi::AMPL_TYPE_AMPL_STRING {
+            if type_ == ffi::AMPL_TYPE_AMPL_STRING {
                 let mut s_ptr: *mut c_char = ptr::null_mut();
                 ffi::AMPL_VariantGetStringValue(var, &mut s_ptr);
                 let s = if s_ptr.is_null() {
@@ -321,9 +321,7 @@ impl DataFrame {
                 let mut v: f64 = 0.0;
                 ffi::AMPL_VariantGetNumericValue(var, &mut v);
                 Value::Numeric(v)
-            };
-            ffi::AMPL_VariantFree(&mut var);
-            result
+            }
         }
     }
 
@@ -412,9 +410,11 @@ impl DataFrame {
     /// `values.len()` must equal `row_indices.len() * col_indices.len()`.
     pub fn set_matrix_strings(&self, row_indices: &[&str], col_indices: &[&str], values: &[&str]) {
         let row_cs: Vec<CString> = row_indices.iter().map(|&s| CString::new(s).unwrap()).collect();
-        let row_ptrs: Vec<*const c_char> = row_cs.iter().map(|s| s.as_ptr()).collect();
+        let mut row_ptrs: Vec<*const c_char> = row_cs.iter().map(|s| s.as_ptr()).collect();
+        row_ptrs.push(ptr::null());
         let col_cs: Vec<CString> = col_indices.iter().map(|&s| CString::new(s).unwrap()).collect();
-        let col_ptrs: Vec<*const c_char> = col_cs.iter().map(|s| s.as_ptr()).collect();
+        let mut col_ptrs: Vec<*const c_char> = col_cs.iter().map(|s| s.as_ptr()).collect();
+        col_ptrs.push(ptr::null());
         let val_cs: Vec<CString> = values.iter().map(|&s| CString::new(s).unwrap()).collect();
         let val_ptrs: Vec<*const c_char> = val_cs.iter().map(|s| s.as_ptr()).collect();
         let mut row_args: *mut ffi::AMPL_ARGS = ptr::null_mut();

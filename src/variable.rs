@@ -69,6 +69,16 @@ impl Variable {
         indexarity
     }
 
+    /// Return the instance of this scalar (non-indexed) variable.
+    pub fn get_scalar(&self) -> Variableinstance {
+        let tuple = unsafe {
+            let mut t: *mut ffi::AMPL_TUPLE = ptr::null_mut();
+            ffi::AMPL_TupleCreate(&mut t, 0, ptr::null_mut());
+            Tuple { raw: t }
+        };
+        Variableinstance { ampl: self.ampl, name: self.name.clone(), tuple }
+    }
+
     /// Return all instances of this variable as a list of [`Variableinstance`] objects.
     pub fn instances(&self) -> Vec<Variableinstance> {
         let name = CString::new(&*self.name).unwrap();

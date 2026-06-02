@@ -1,6 +1,6 @@
 use amplrs::ampl::Ampl;
 use amplrs::dataframe::DataFrame;
-use std::panic;
+use amplrs::error::catch_ampl_error;
 
 fn make_ampl_model(ampl: &mut Ampl, numvars: usize, unfeasible: bool, unbounded: bool) {
     assert!(!(unfeasible && unbounded));
@@ -32,19 +32,9 @@ fn make_ampl_model(ampl: &mut Ampl, numvars: usize, unfeasible: bool, unbounded:
 
 /// Try to write the model; print and return `true` if AMPL raises an error.
 fn try_write(ampl: &mut Ampl, filename: &str, auxfiles: &str) -> bool {
-    let result = panic::catch_unwind(panic::AssertUnwindSafe(|| {
-        ampl.write(filename, auxfiles);
-    }));
-    match result {
-        Err(e) => {
-            let msg = e.downcast_ref::<String>()
-                .map(|s| s.as_str())
-                .or_else(|| e.downcast_ref::<&str>().copied())
-                .unwrap_or("unknown AMPL error");
-            println!("{}", msg);
-            true
-        }
-        Ok(_) => false,
+    match catch_ampl_error(|| ampl.write(filename, auxfiles)) {
+        Some(msg) => { println!("{}", msg); true }
+        None => false,
     }
 }
 

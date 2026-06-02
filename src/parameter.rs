@@ -63,10 +63,18 @@ impl Parameter {
     /// The length of `values` must equal the number of instances.
     pub fn set_all_double_values(&self, values: &[f64]) {
         let name = CString::new(&*self.name).unwrap();
-        let err = unsafe {
-            ffi::AMPL_ParameterSetArgsDoubleValues(self.raw, name.as_ptr(), values.len(), values.as_ptr())
-        };
-        unsafe { check_ampl_error(err) };
+        let mut args: *mut ffi::AMPL_ARGS = ptr::null_mut();
+        unsafe {
+            ffi::AMPL_ArgsCreateNumeric(&mut args, values.as_ptr());
+            let err = ffi::AMPL_ParameterSetArgsValues(
+                self.raw,
+                name.as_ptr(),
+                values.len(),
+                args,
+            );
+            check_ampl_error(err);
+            ffi::AMPL_ArgsDestroy(&mut args);
+        }
     }
 
     /// Assign `values` to the specific instances identified by the string `indices`.

@@ -1,6 +1,7 @@
 use crate::error::check_ampl_error;
 use crate::ffi;
 use crate::ampl::Ampl;
+use crate::dataframe::Value;
 use crate::suffix::{Numericsuffix, Stringsuffix};
 use crate::tuple::Tuple;
 
@@ -104,6 +105,44 @@ impl Variableinstance {
             let value_str = String::from(CStr::from_ptr(value_ptr).to_str().unwrap());
             ffi::AMPL_StringFree(&mut value_ptr);
             value_str
+        }
+    }
+
+    /// Return the current value of this variable instance.
+    pub fn value(&self) -> f64 { self.dbl_suffix(Numericsuffix::Value) }
+
+    /// Return the dual value of this variable instance.
+    pub fn dual(&self) -> f64 { self.dbl_suffix(Numericsuffix::Dual) }
+
+    /// Return the index tuple of this instance as a `Vec<Value>`.
+    pub fn key(&self) -> Vec<Value> {
+        unsafe {
+            let mut size: usize = 0;
+            ffi::AMPL_TupleGetSize(self.tuple.raw, &mut size);
+            (0..size).map(|i| {
+                let mut var: *mut ffi::AMPL_VARIANT = ptr::null_mut();
+                ffi::AMPL_TupleGetVariant(self.tuple.raw, i, &mut var);
+                let mut type_: ffi::AMPL_TYPE = ffi::AMPL_TYPE_AMPL_NUMERIC;
+                ffi::AMPL_VariantGetType(var, &mut type_);
+                if type_ == ffi::AMPL_TYPE_AMPL_STRING {
+                    let mut s_ptr: *mut c_char = ptr::null_mut();
+                    ffi::AMPL_VariantGetStringValue(var, &mut s_ptr);
+                    let s = if s_ptr.is_null() {
+                        String::new()
+                    } else {
+                        let owned = CStr::from_ptr(s_ptr).to_str().unwrap().to_string();
+                        ffi::AMPL_StringFree(&mut s_ptr);
+                        owned
+                    };
+                    ffi::AMPL_VariantFree(&mut var);
+                    Value::Text(s)
+                } else {
+                    let mut v: f64 = 0.0;
+                    ffi::AMPL_VariantGetNumericValue(var, &mut v);
+                    ffi::AMPL_VariantFree(&mut var);
+                    Value::Numeric(v)
+                }
+            }).collect()
         }
     }
 
